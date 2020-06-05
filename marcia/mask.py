@@ -463,7 +463,7 @@ class Mask:
         plt.legend(handles=patches, bbox_to_anchor=(
             1.05, 1), loc=2, borderaxespad=0.)
         plt.grid(True)
-        plt.title("Classificiation minéralogique - " + self.prefix_[:-1])
+        plt.title("Classification minéralogique - " + self.prefix_[:-1])
         plt.tight_layout()
         plt.show()
 
