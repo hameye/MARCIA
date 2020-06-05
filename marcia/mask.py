@@ -35,7 +35,7 @@ import hyperspy.api as hs
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 ######################################################
 __author__ = "Hadrien Meyer"
-__organization__ = "ENSG Nancy"
+__organization__ = "ENSG - UMR GeoRessources N°7359 - Université de Lorraine"
 __email__ = "meyerhadrien96@gmail.com"
 __date__ = "March, 2020"
 
