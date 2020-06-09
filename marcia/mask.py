@@ -29,10 +29,9 @@ import pandas as pd
 from skimage.io import imread
 import matplotlib.pyplot as plt
 import seaborn as sns
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.patches as mpatches
 import hyperspy.api as hs
-from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+from matplotlib.colors import ListedColormap
 ######################################################
 __author__ = "Hadrien Meyer"
 __organization__ = "ENSG - UMR GeoRessources N°7359 - Université de Lorraine"
@@ -63,8 +62,8 @@ class Mask:
             prefix: str,
             suffix: str,
             table: str,
-            Echelle: bool = False,
-            Normalisation: bool = True):
+            Scale: bool = False,
+            Normalization: bool = True):
         """Initialization of the class.
         Extraction of the suffix of the file in order to know how to treat it.
         Indication of the presence of a scalebar if the file is an image.
@@ -77,8 +76,8 @@ class Mask:
         """
         self.prefix_ = prefix
         self.suffix_ = suffix
-        self.echelle_ = Echelle
-        self.Normalisation_ = Normalisation
+        self.scale_ = Scale
+        self.Normalization_ = Normalization
         self.table_name = table
 
     def load_table(self):
@@ -87,18 +86,27 @@ class Mask:
         the classification. Colors are also specified in the spreadsheet.
         """
 
+        # Check if table is csv/txt or xlsx
         if self.table_name.split('.')[-1] in ('csv', 'txt'):
             self.table_ = pd.read_csv(self.table_name)
-        else:
+        elif self.table_name.split('.')[-1] in ('xls'):
             self.table_ = pd.read_excel(self.table_name)
+        else:
+            raise Exception("Please provide valid Table format.\
+                Valid data types are: png, .bmp, .tif, .txt or .rpl ")
 
+        # Check if table has specific colors for the masks
         if self.table_['Element'].str.contains('ouleur').any():
             indice = np.where(
                 self.table_['Element'].str.contains('ouleur'))[0][0]
+
+            # Creation of dictionnary containing the colors
             self.Couleurs_ = {}
             for coul in range(1, self.table_.iloc[indice].shape[0]):
                 if isinstance(self.table_.iloc[indice][coul], str):
                     self.Couleurs_[coul - 1] = self.table_.iloc[indice][coul]
+
+            # For simplicity in the process, color column is then removed
             self.table_ = self.table_.drop([indice])
 
     def datacube_creation(self):
@@ -130,22 +138,32 @@ class Mask:
         2 class files created in that function.
         """
 
+        # Check if the data files are images
         if self.suffix_ in ('.bmp', '.tif', '.jpg'):
+
+            # Creation of element names dictionnary
             self.Elements_ = {}
-            test = np.linalg.norm(
+
+            # Read the first image to know the dimensions
+            test_image = np.linalg.norm(
                 imread(
                     self.prefix_ +
                     self.table_.iloc[0][0] +
                     self.suffix_),
                 axis=2)
             self.datacube_ = np.zeros(
-                (test.shape[0], test.shape[1], self.table_.shape[0]))
-            test[:, :] = 0
+                (test_image.shape[0],
+                 test_image.shape[1], self.table_.shape[0]))
+            test_image[:, :] = 0
 
+            # Loop over elements in the table
             for element in range(self.table_.shape[0]):
                 self.Elements_[element] = self.table_.iloc[element]['Element']
 
+                # Check if the element is not a ratio of two elements
                 if '/' not in self.table_.iloc[element]['Element']:
+
+                    # Load of the  RGB image and normalization to one component
                     self.datacube_[
                         :,
                         :,
@@ -155,9 +173,18 @@ class Mask:
                             self.table_.iloc[element][0] +
                             self.suffix_),
                         axis=2)
-                    if self.echelle_:
-                        test += self.datacube_[:, :, element]
+
+                    # If there is a scale, scale is usually white, making it
+                    # the highest value of the map, adding all maps and then
+                    # remove values above a threshold allows to remove scale of
+                    # calculation
+                    if self.scale_:
+                        test_image += self.datacube_[:, :, element]
+
+                # If the element is actually a ratio of two elements
                 else:
+
+                    # Load of the two images
                     image_over = imread(
                         self.prefix_ +
                         self.table_['Element'][element].split('/')[0] +
@@ -166,35 +193,50 @@ class Mask:
                         self.prefix_ +
                         self.table_['Element'][element].split('/')[1] +
                         self.suffix_)
+
+                    # Normalization of the two images
                     image_over_grey = np.linalg.norm(image_over, axis=2)
                     image_under_grey = np.linalg.norm(image_under, axis=2)
+
+                    # Set 0 values to 0.01 in denominator image in order to
+                    # avoid division by 0
                     image_under_grey[image_under_grey == 0.] = 0.01
                     self.datacube_[
                         :, :, element] = image_over_grey / image_under_grey
 
-            if self.echelle_:
+            # Arbitrary threshold fixed to 3000, but scale option might be
+            # removed
+            if self.scale_:
                 for i in range(len(self.Elements_)):
-                    self.datacube_[:, :, i][test > 3000] = np.nan
+                    self.datacube_[:, :, i][test_image > 3000] = np.nan
 
+            # Normalization over 100 to every element of the cube
             for i in range(len(self.Elements_)):
                 self.datacube_[:, :, i] = self.datacube_[
                     :, :, i] / np.nanmax(self.datacube_[:, :, i]) * 100
 
-        if self.suffix_ == '.txt':
+        # Check if data are textfiles consisting of raw count data per pixel
+        # per energy domain
+        elif self.suffix_ == '.txt':
             self.Elements_ = {}
-            test = np.loadtxt(
+            # Read the first image to know the dimensions
+            test_image = np.loadtxt(
                 self.prefix_ +
                 self.table_.iloc[0][0] +
                 self.suffix_,
                 delimiter=';')
             self.datacube_ = np.zeros(
-                (test.shape[0], test.shape[1], self.table_.shape[0]))
-            test[:, :] = 0
+                (test_image.shape[0],
+                 test_image.shape[1], self.table_.shape[0]))
+            test_image[:, :] = 0
 
+            # Loop over elements in the table
             for element in range(self.table_.shape[0]):
                 self.Elements_[element] = self.table_.iloc[element]['Element']
 
+                # Check if the element is not a ratio of two elements
                 if '/' not in self.table_.iloc[element]['Element']:
+                    # Load of the data count per element
                     self.datacube_[
                         :,
                         :,
@@ -204,7 +246,9 @@ class Mask:
                         self.suffix_,
                         delimiter=';')
                     if self.echelle_:
-                        test += self.datacube_[:, :, element]
+                        test_image += self.datacube_[:, :, element]
+
+                # If the element is actually a ratio of two elements
                 else:
                     image_over_grey = np.loadtxt(
                         self.prefix_ +
@@ -219,13 +263,16 @@ class Mask:
 
                     self.datacube_[
                         :, :, element] = image_over_grey / image_under_grey
-
-            if self.Normalisation_:
+            # If user wants to see normalized over 100 data
+            # This option makes impossible intensity comparison over element
+            if self.Normalization_:
                 for i in range(len(self.Elements_)):
                     self.datacube_[:, :, i] = self.datacube_[
                         :, :, i] / np.nanmax(self.datacube_[:, :, i]) * 100
 
-        if self.suffix_ == '.rpl':
+        # Check if data are .rpl file, that is complete datacube
+        # Load of the file using HyperSpy library
+        elif self.suffix_ == '.rpl':
             cube = hs.load(self.prefix_[:-1] + ".rpl",
                            signal_type="EDS_SEM", lazy=True)
             cube.axes_manager[-1].name = 'E'
@@ -273,6 +320,11 @@ class Mask:
                 for i in range(len(self.Elements_)):
                     self.datacube_[:, :, i] = self.datacube_[
                         :, :, i] / np.nanmax(self.datacube_[:, :, i]) * 100
+
+        # Raise Exception to provide valide data type
+        else:
+            raise Exception("Please input valid data type. Valid data types\
+                are: png, .bmp, .tif, .txt or .rpl ")
 
     def mineralcube_creation(self):
         """Function that creates a 3D numpy array (X and Y are the dimensions
@@ -329,10 +381,12 @@ class Mask:
 
                 if self.Normalisation_:
                     mask_i_str[:, :, k][mask_i_str[
-                        :, :, k] < threshold_min * np.nanmax(mask_i_str[:, :, k])] = np.nan
+                        :, :, k] < threshold_min * np.nanmax(
+                            mask_i_str[:, :, k])] = np.nan
                     if threshold_max:
                         mask_i_str[:, :, k][mask_i_str[
-                            :, :, k] > threshold_max * np.nanmax(mask_i_str[:, :, k])] = np.nan
+                            :, :, k] > threshold_max * np.nanmax(
+                                mask_i_str[:, :, k])] = np.nan
 
                     mask_i_str[np.isfinite(mask_i_str)] = 1
                 else:
@@ -370,7 +424,6 @@ class Mask:
         plt.title(self.Minerals_[indice])
         plt.savefig('Mask_' + self.Minerals_[indice] + '.tif')
         plt.close()
-        # np.save('Mask'+self.Minerals_[indice],self.mineralcube_[:,:,indice])
 
     def get_hist(self, indice: str):
         """Function that plots the elemental map and the corresponding
@@ -393,6 +446,19 @@ class Mask:
         ax[1].set_title("Histograme d'intensité : " + self.Elements_[indice])
         fig.tight_layout()
         plt.show()
+
+    def create_mineral_mask(self):
+        proportion = {}
+        array = np.zeros((self.datacube_.shape[0], self.datacube_.shape[1]))
+        array[np.isfinite(array)] = np.nan
+        for indice in range(len(self.Minerals_)):
+            array[(np.isfinite(self.mineralcube_[:, :, indice])) & (
+                np.nansum(self.mineralcube_, axis=2) == 1)] = indice
+        array[np.where(np.nansum(self.mineralcube_, axis=2) > 1)
+              ] = len(self.Minerals_) + 1
+        for indice in range(len(self.Minerals_)):
+            proportion[indice] = np.where(array == indice)[
+                0].shape[0] / np.sum(np.isfinite(array)) * 100
 
     def plot_mineral_mask(self):
         fig = plt.figure()
@@ -437,8 +503,12 @@ class Mask:
                                         :-1] if round(
                                             proportion[
                                                 int(i)], 2) > 0]
-            patches.append(mpatches.Patch(color=colors[-1], label="{} : {} %".format('Mixtes', str(round(
-                np.where(array == np.nanmax(array))[0].shape[0] / np.sum(np.isfinite(array)) * 100, 2)))))
+            patches.append(mpatches.Patch(
+                color=colors[-1], label="{} : {} %".format(
+                    'Mixtes', str(round(
+                        np.where(array == np.nanmax(
+                            array))[0].shape[0] / np.sum(
+                            np.isfinite(array)) * 100, 2)))))
         else:
             patches = [
                 mpatches.Patch(
