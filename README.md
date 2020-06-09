@@ -1,1 +1,1 @@
-# MARCIA
+# MARCIA - MAsking spectRosCopIc dAtacube
