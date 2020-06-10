@@ -527,8 +527,10 @@ class Mask:
                 color='white', label="{} : {} %".format(
                     'Non indexés', str(
                         round(
-                            (self.datacube_.shape[0] * self.datacube_.shape[1] - len(arrray)) / (
-                                self.datacube_.shape[0] * self.datacube_.shape[1]) * 100, 2)))))
+                            (self.datacube_.shape[
+                                0] * self.datacube_.shape[1] - len(arrray)) / (
+                                self.datacube_.shape[
+                                    0] * self.datacube_.shape[1]) * 100, 2)))))
         # put those patched as legend-handles into the legend
         plt.legend(handles=patches, bbox_to_anchor=(
             1.05, 1), loc=2, borderaxespad=0.)
@@ -646,3 +648,16 @@ class Mask:
                         alpha=0.3, marker="+")
         fig.tight_layout()
         plt.show()
+
+    def get_mask_spectrum(self, mask: str):
+        mineral = list(self.Minerals_.values()).index(
+            str(mask))
+        cube = hs.load(self.prefix_[:-1] + ".rpl",
+                       signal_type="EDS_SEM", lazy=True)
+        array = np.asarray(cube)
+        array[np.isnan(self.mineralcube_[:, :, mineral])] = 0
+        cube = hs.signals.Signal1D(array)
+        spectrum = cube.sum().data
+        dataframe = pd.DataFrame()
+        dataframe['Counts'] = spectrum
+        dataframe.to_csv(mask + '_mean_spectrum.txt')
