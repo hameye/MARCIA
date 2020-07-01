@@ -844,6 +844,6 @@ class Mask:
         array[np.isnan(self.mineral_cube[:, :, mineral])] = 0
         cube = hs.signals.Signal1D(array)
         spectrum = cube.sum().data
-        dataframe = pd.DataFrame(spectrum, columns=['channel,counts'])
+        dataframe = pd.DataFrame(spectrum, columns=['channel', 'counts'])
         #dataframe['Counts'] = spectrum
         dataframe.to_csv(mask + '_mean_spectrum.txt')
