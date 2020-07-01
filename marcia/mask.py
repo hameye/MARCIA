@@ -220,13 +220,6 @@ class Mask:
                             self.suffix),
                         axis=2)
 
-                    # If there is a scale, scale is usually white, making it
-                    # the highest value of the map, adding all maps and then
-                    # remove values above a threshold allows to remove scale of
-                    # calculation
-                    if self.scale:
-                        test_image += self.data_cube[:, :, element]
-
                 # If the element is actually a ratio of two elements
                 else:
 
