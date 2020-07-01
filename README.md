@@ -14,3 +14,5 @@ pip install git+ssh://git@github.com/hameye/marcia.git
 ```python
 from marcia.mask import Mask
 ```
+
+![Example](https://github.com/hameye/MARCIA/blob/dev/gallery.png)
