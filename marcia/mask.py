@@ -55,15 +55,41 @@ class Mask:
     quantitative analysis by the software.
 
     The spreadsheet can contain elemental and ratios querries and also a line
-    for the color querries."""
+    for the color querries.
 
-    def __init__(
-            self,
-            prefix: str,
-            suffix: str,
-            table: str,
-            scale: bool = False,
-            normalization: bool = False):
+    Attributes
+    ----------
+    colors : dict
+        Description
+    data_cube : TYPE
+        Description
+    Elements : dict
+        Description
+    mineral_cube : TYPE
+        Description
+    Minerals : dict
+        Description
+    newcmp : TYPE
+        Description
+    normalization : TYPE
+        Description
+    prefix : TYPE
+        Description
+    scale : TYPE
+        Description
+    suffix : TYPE
+        Description
+    table : TYPE
+        Description
+    table_name : TYPE
+        Description
+    """
+
+    def __init__(self,
+                 prefix: str,
+                 suffix: str,
+                 table: str,
+                 normalization: bool = False):
         """Initialization of the class.
         Extraction of the suffix of the file in order to know how to treat it.
         Indication of the presence of a scalebar if the file is an image.
@@ -73,23 +99,37 @@ class Mask:
                 If not, values in the spreadsheet are specified in number
                 of counts in the spectrum.
                 If the file is an image, the normalization is automatic.
+
+        Parameters
+        ----------
+        prefix : str
+            Description
+        suffix : str
+            Description
+        table : str
+            Description
+        scale : bool, optional
+            Description
+        normalization : bool, optional
+            Description
         """
         self.prefix = prefix
         self.suffix = suffix
-        self.scale = scale
         self.normalization = normalization
         self.table_name = table
 
     def load_table(self):
-        """ Load the spreadsheet into the programm.
+        """Load the spreadsheet into the programm.
         Verification if information of colors are required for
         the classification. Colors are also specified in the spreadsheet.
+
+
         """
 
         # Check if table is csv/txt or xlsx
         if self.table_name.split('.')[-1] in ('csv', 'txt'):
             self.table = pd.read_csv(self.table_name)
-        elif self.table_name.split('.')[-1] in ('xls'):
+        elif 'xls' in self.table_name.split('.')[-1]:
             self.table = pd.read_excel(self.table_name)
         else:
             raise Exception("Please provide valid Table format.\
@@ -110,7 +150,7 @@ class Mask:
             self.table = self.table.drop([indice])
 
     def datacube_creation(self):
-        """ Create a 3D array (X and Y are the dimensions of the
+        """Create a 3D array (X and Y are the dimensions of the
         sample and Z dimension is the number of elements/emission lines taken
         into account for the classification)
         It stacks the information contained in the elemental files given ranked
@@ -119,7 +159,8 @@ class Mask:
         the data in the array are between 0 and 100.
         If there is a scalebar, the corresponding pixels are non assigned.
 
-        Three types of elemental files are accepted :
+        Three types of elemental files are accepted
+        -------------------------------------------
         - Imges (.bmp of .tif), which are RGB files : each pixel contains 3
         values between 0 and 255. The rgb is put into greyscale calculated
         by the norm 2.
@@ -136,10 +177,15 @@ class Mask:
         of the element in the 3D array created.
 
         2 class files created in that function.
+
+
         """
 
         # Check if the data files are images
         if self.suffix in ('.bmp', '.tif', '.jpg'):
+
+            # Set automatic normalization to True
+            self.normalization = True
 
             # Creation of element names dictionnary
             self.Elements = {}
@@ -204,12 +250,6 @@ class Mask:
                     self.data_cube[
                         :, :, element] = image_over_grey / image_under_grey
 
-            # Arbitrary threshold fixed to 3000, but scale option might be
-            # removed
-            if self.scale:
-                for i in range(len(self.Elements)):
-                    self.data_cube[:, :, i][test_image > 3000] = np.nan
-
             # Normalization over 100 to every element of the cube
             for i in range(len(self.Elements)):
                 self.data_cube[:, :, i] = self.data_cube[
@@ -245,8 +285,6 @@ class Mask:
                         self.table.iloc[element][0] +
                         self.suffix,
                         delimiter=';')
-                    if self.echelle_:
-                        test_image += self.data_cube[:, :, element]
 
                 # If the element is actually a ratio of two elements
                 else:
@@ -388,6 +426,7 @@ class Mask:
                     threshold_min = float(
                         str_table[index_str[k]].split('-')[0])
                     threshold_max = None
+
                 # If more thant one value (should be 2): it corresponds to the
                 # range of accepted values
                 else:
@@ -406,6 +445,7 @@ class Mask:
                         mask_i_str[:, :, k][mask_i_str[
                             :, :, k] > threshold_max * np.nanmax(
                                 mask_i_str[:, :, k])] = np.nan
+
                     # Values outside thresholds are nan, and valid values are
                     # set to 1
                     mask_i_str[np.isfinite(mask_i_str)] = 1
@@ -436,6 +476,12 @@ class Mask:
     def get_mask(self, indice: str):
         """Plot the mineral mask wanted
         Input is the index of the mineral in the 3D array (cube).
+
+        Parameters
+        ----------
+        indice : str
+            Description
+
         """
         # Conversion of given string indices to integer indice of the cube
         indice = list(self.Minerals.values()).index(str(indice))
@@ -448,6 +494,12 @@ class Mask:
     def save_mask(self, indice: str):
         """Save the mineral mask wanted as a .tif file.
         Input is the index of the mineral in the 3D array (cube).
+
+        Parameters
+        ----------
+        indice : str
+            Description
+
         """
         # Conversion of given string indices to integer indice of the cube
         indice = list(self.Minerals.values()).index(str(indice))
@@ -460,7 +512,14 @@ class Mask:
         """Plot the elemental map on the left side an
         the corresponding hitogram of intensity on the right side
         Input is the index of the element in the 3D array
-        Useful function in order to set the threshold in the spreadsheet."""
+        Useful function in order to set the threshold in the spreadsheet.
+
+        Parameters
+        ----------
+        indice : str
+            Description
+
+        """
         # Conversion of given string indices to integer indice of the cube
         indice = list(self.Elements.values()).index(str(indice))
         fig, axes = plt.subplots(1, 2, figsize=(10, 5))
@@ -476,6 +535,7 @@ class Mask:
         plt.ylim(0, np.max(Anan))
         sns.distplot(Anan, kde=False, ax=axes[1], hist_kws={
                      'range': (0.0, np.max(Anan))}, vertical=True)
+
         # Logarithm scale because background has a lof ot points and flatten
         # interesting information if linear
         ax[1].set_xscale('log')
@@ -484,7 +544,7 @@ class Mask:
         plt.show()
 
     def create_mineral_mask(self):
-        """ Create a 2D array that associate each pixel to a mask
+        """Create a 2D array that associate each pixel to a mask
         by assigning a value to each pixel. It also creates a
         dictionnary containing the relative proportion of a value
         compared to others.
@@ -509,6 +569,8 @@ class Mask:
                 0].shape[0] / np.sum(np.isfinite(array)) * 100
 
     def plot_mineral_mask(self):
+        """Summary
+        """
         fig = plt.figure()
 
         # Creation of proportion dictionnary
@@ -535,11 +597,20 @@ class Mask:
         # First plot to generate random colors
         im = plt.imshow(array, cmap='Paired')
         arrray = array[np.isfinite(array)]
+
+        if np.nansum(
+                self.mineral_cube,
+                axis=2).max() > 1:
+            values = np.arange(len(self.Minerals) + 1)
+        else:
+            values = np.arange(len(self.Minerals))
+
         values = np.unique(arrray.ravel())
         colors = [im.cmap(im.norm(value)) for value in values]
 
         # Test if colors where specify in the table
         try:
+
             # If true, specified values are replaced
             for value in self.colors:
                 colors[value] = self.colors[value]
@@ -552,7 +623,10 @@ class Mask:
 
         # Open new figure
         fig = plt.figure()
-        im = plt.imshow(array, cmap=self.newcmp)
+        im = plt.imshow(array,
+                        cmap=self.newcmp,
+                        vmin=values.min(),
+                        vmax=values.max())
 
         # create a patch for every color
         # If true, there are mixed pixels: need to add a patch of mixte
@@ -613,8 +687,16 @@ class Mask:
         plt.show()
 
     def get_masked_element(self, element: str, mineral: str):
-        """ Plot the elemental map and the histogram
+        """Plot the elemental map and the histogram
         associated only in a specific mask.
+
+        Parameters
+        ----------
+        element : str
+            Description
+        mineral : str
+            Description
+
         """
         # Conversion of given string indices to integer indices of the cubes
         element = list(self.Elements.values()).index(str(element))
@@ -641,6 +723,12 @@ class Mask:
     def cube_masking_keep(self, mineral: str):
         """Recreates a raw datacube containing data only
         in the wanted mask.
+
+        Parameters
+        ----------
+        mineral : str
+            Description
+
         """
         # Conversion of given string indices to integer indice of the cube
         mineral = list(self.Minerals.values()).index(str(mineral))
@@ -661,6 +749,11 @@ class Mask:
     def cube_masking_remove(self, mineral: str):
         """Recreates a raw datacube containing all the
         data without the mask not wanted.
+
+        Parameters
+        ----------
+        mineral : str
+            Description
         """
         # Conversion of given string indices to integer indice of the cube
         mineral = list(self.Minerals.values()).index(str(mineral))
@@ -682,7 +775,15 @@ class Mask:
         """Plot one element against another one in a scatter plot
         Input is the indexes of each of the two element in the 3D array
         Useful function in order to see elemental ratios and some
-        elemental thresholds."""
+        elemental thresholds.
+
+        Parameters
+        ----------
+        indicex : str
+            Description
+        indicey : str
+            Description
+        """
         # Conversion of given string indices to integer indices of the cubes
         indicex = list(self.Elements.values()).index(str(indicex))
         indicey = list(self.Elements.values()).index(str(indicey))
@@ -703,7 +804,17 @@ class Mask:
         """Plot one element against another one in a scatter plot
         Input is the indexes of each of the two element in the 3D array
         Useful function in order to see elemental ratios and some elemental
-        thresholds."""
+        thresholds.
+
+        Parameters
+        ----------
+        indicex : str
+            Description
+        indicey : str
+            Description
+        indicez : str
+            Description
+        """
         # Conversion of given string indices to integer indices of the cubes
         indicex = list(self.Elements.values()).index(str(indicex))
         indicey = list(self.Elements.values()).index(str(indicey))
@@ -726,6 +837,13 @@ class Mask:
         plt.show()
 
     def get_mask_spectrum(self, mask: str):
+        """Summary
+
+        Parameters
+        ----------
+        mask : str
+            Description
+        """
         mineral = list(self.Minerals.values()).index(
             str(mask))
         cube = hs.load(self.prefix[:-1] + ".rpl",

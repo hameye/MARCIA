@@ -7,7 +7,7 @@
 ## Install
 Just do 
 ```bash
-pip install git+ssh://git@github.com/hameye/findcoord.git
+pip install git+ssh://git@github.com/hameye/marcia.git
 ``` 
 
 ## Use in python
