@@ -605,7 +605,6 @@ class Mask:
         else:
             values = np.arange(len(self.Minerals))
 
-        values = np.unique(arrray.ravel())
         colors = [im.cmap(im.norm(value)) for value in values]
 
         # Test if colors where specify in the table
