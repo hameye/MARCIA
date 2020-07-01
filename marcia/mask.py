@@ -32,6 +32,7 @@ import seaborn as sns
 import matplotlib.patches as mpatches
 import hyperspy.api as hs
 from matplotlib.colors import ListedColormap
+hs.preferences.GUIs.warn_if_guis_are_missing = False
 ######################################################
 __author__ = "Hadrien Meyer"
 __organization__ = "ENSG - UMR GeoRessources N°7359 - Université de Lorraine"
@@ -165,8 +166,10 @@ class Mask:
         - Imges (.bmp of .tif), which are RGB files : each pixel contains 3
         values between 0 and 255. The rgb is put into greyscale calculated
         by the norm 2.
+
         - Textfile (.txt), which is already the elemental array where the
-        values are the number of counts
+        values are the number of counts.
+
         - Raw file (.rpl), wich is the datacube containing all the spectra
         for every pixel. The hyperspy library is used to extract the
         emission lines corresponding to the wanted elements.
