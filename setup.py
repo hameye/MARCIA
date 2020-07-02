@@ -17,7 +17,7 @@ setup(
         'numpy',
         'seaborn',
         'hyperspy',
-        'ternary-plot'
+        'python-ternary'
     ],
     zip_safe=False
 )
