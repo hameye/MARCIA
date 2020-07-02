@@ -32,9 +32,12 @@ import seaborn as sns
 import matplotlib.patches as mpatches
 import hyperspy.api as hs
 from matplotlib.colors import ListedColormap
+import ternary
+hs.preferences.GUIs.warn_if_guis_are_missing = False
+hs.preferences.save()
 ######################################################
 __author__ = "Hadrien Meyer"
-__organization__ = "ENSG - Université de Lorraine"
+__organization__ = "ENSG - UMR GeoRessources N°7359 - Université de Lorraine"
 __email__ = "meyerhadrien96@gmail.com"
 __date__ = "March, 2020"
 
@@ -55,16 +58,41 @@ class Mask:
     quantitative analysis by the software.
 
     The spreadsheet can contain elemental and ratios querries and also a line
-    for the color querries."""
+    for the color querries.
 
-    def __init__(
-            self,
-            prefix: str,
-            suffix: str,
-            table: str,
-            Scale: bool = False,
-            Normalization: bool = True):
-        """Initialization of the class.
+    Attributes
+    ----------
+    colors : dict
+        Description
+    data_cube : TYPE
+        Description
+    Elements : dict
+        Description
+    mineral_cube : TYPE
+        Description
+    Minerals : dict
+        Description
+    newcmp : TYPE
+        Description
+    normalization : TYPE
+        Description
+    prefix : TYPE
+        Description
+    suffix : TYPE
+        Description
+    table : TYPE
+        Description
+    table_name : TYPE
+        Description
+    """
+
+    def __init__(self,
+                 prefix: str,
+                 suffix: str,
+                 table: str,
+                 normalization: bool = False):
+        """
+        Initialization of the class.
         Extraction of the suffix of the file in order to know how to treat it.
         Indication of the presence of a scalebar if the file is an image.
         Indication of the will to have normalized information of the
@@ -73,44 +101,60 @@ class Mask:
                 If not, values in the spreadsheet are specified in number
                 of counts in the spectrum.
                 If the file is an image, the normalization is automatic.
+
+        Parameters
+        ----------
+        prefix : str
+            Common name to all data files (eg: lead_ore_)
+        suffix : {'.bmp', '.tif', '.jpg','.txt','.rpl'}
+            Type of the data file
+        table : str
+            Name of spreadsheet containing thresholds (eg: Mask.xlsx)
+        normalization : bool, optional
+            Indicate if data are normalized or not, only valid
+            for non images data files.
         """
-        self.prefix_ = prefix
-        self.suffix_ = suffix
-        self.scale_ = Scale
-        self.Normalization_ = Normalization
+        self.prefix = prefix
+        self.suffix = suffix
+        self.normalization = normalization
         self.table_name = table
 
     def load_table(self):
-        """ Load the spreadsheet into the programm.
+        """
+        Load the spreadsheet into the programm.
         Verification if information of colors are required for
         the classification. Colors are also specified in the spreadsheet.
-        """
 
+        """
         # Check if table is csv/txt or xlsx
         if self.table_name.split('.')[-1] in ('csv', 'txt'):
-            self.table_ = pd.read_csv(self.table_name)
-        elif self.table_name.split('.')[-1] in ('xls'):
-            self.table_ = pd.read_excel(self.table_name)
+            self.table = pd.read_csv(self.table_name)
+
+        elif 'xls' in self.table_name.split('.')[-1]:
+            self.table = pd.read_excel(self.table_name)
+
         else:
-            raise Exception("Please provide valid Table format.\
-                Valid data types are: png, .bmp, .tif, .txt or .rpl ")
+            raise Exception(
+                f"Please provide valid Table format."
+                f"Valid data types are: png, .bmp, .tif, .txt or .rpl ")
 
         # Check if table has specific colors for the masks
-        if self.table_['Element'].str.contains('ouleur').any():
+        if self.table['Element'].str.contains('ouleur').any():
             indice = np.where(
-                self.table_['Element'].str.contains('ouleur'))[0][0]
+                self.table['Element'].str.contains('ouleur'))[0][0]
 
             # Creation of dictionnary containing the colors
-            self.Couleurs_ = {}
-            for coul in range(1, self.table_.iloc[indice].shape[0]):
-                if isinstance(self.table_.iloc[indice][coul], str):
-                    self.Couleurs_[coul - 1] = self.table_.iloc[indice][coul]
+            self.colors = {}
+            for coul in range(1, self.table.iloc[indice].shape[0]):
+                if isinstance(self.table.iloc[indice][coul], str):
+                    self.colors[coul - 1] = self.table.iloc[indice][coul]
 
             # For simplicity in the process, color column is then removed
-            self.table_ = self.table_.drop([indice])
+            self.table = self.table.drop([indice])
 
     def datacube_creation(self):
-        """ Function that creates a 3D array (X and Y are the dimensions of the
+        """
+        Create a 3D array (X and Y are the dimensions of the
         sample and Z dimension is the number of elements/emission lines taken
         into account for the classification)
         It stacks the information contained in the elemental files given ranked
@@ -119,12 +163,15 @@ class Mask:
         the data in the array are between 0 and 100.
         If there is a scalebar, the corresponding pixels are non assigned.
 
-        Three types of elemental files are accepted :
+        Three types of elemental files are accepted
+        -------------------------------------------
         - Imges (.bmp of .tif), which are RGB files : each pixel contains 3
         values between 0 and 255. The rgb is put into greyscale calculated
         by the norm 2.
+
         - Textfile (.txt), which is already the elemental array where the
-        values are the number of counts
+        values are the number of counts.
+
         - Raw file (.rpl), wich is the datacube containing all the spectra
         for every pixel. The hyperspy library is used to extract the
         emission lines corresponding to the wanted elements.
@@ -136,63 +183,59 @@ class Mask:
         of the element in the 3D array created.
 
         2 class files created in that function.
-        """
 
+        """
         # Check if the data files are images
-        if self.suffix_ in ('.bmp', '.tif', '.jpg'):
+        if self.suffix in ('.bmp', '.tif', '.jpg'):
+
+            # Set automatic normalization to True
+            self.normalization = True
 
             # Creation of element names dictionnary
-            self.Elements_ = {}
+            self.Elements = {}
 
             # Read the first image to know the dimensions
             test_image = np.linalg.norm(
                 imread(
-                    self.prefix_ +
-                    self.table_.iloc[0][0] +
-                    self.suffix_),
+                    self.prefix
+                    + self.table.iloc[0][0]
+                    + self.suffix),
                 axis=2)
-            self.datacube_ = np.zeros(
+
+            self.data_cube = np.zeros(
                 (test_image.shape[0],
-                 test_image.shape[1], self.table_.shape[0]))
+                 test_image.shape[1],
+                 self.table.shape[0]))
+
             test_image[:, :] = 0
 
             # Loop over elements in the table
-            for element in range(self.table_.shape[0]):
-                self.Elements_[element] = self.table_.iloc[element]['Element']
+            for element in range(self.table.shape[0]):
+                self.Elements[element] = self.table.iloc[element]['Element']
 
                 # Check if the element is not a ratio of two elements
-                if '/' not in self.table_.iloc[element]['Element']:
+                if '/' not in self.table.iloc[element]['Element']:
 
                     # Load of the  RGB image and normalization to one component
-                    self.datacube_[
-                        :,
-                        :,
-                        element] = np.linalg.norm(
+                    self.data_cube[:, :, element] = np.linalg.norm(
                         imread(
-                            self.prefix_ +
-                            self.table_.iloc[element][0] +
-                            self.suffix_),
+                            self.prefix
+                            + self.table.iloc[element][0]
+                            + self.suffix),
                         axis=2)
-
-                    # If there is a scale, scale is usually white, making it
-                    # the highest value of the map, adding all maps and then
-                    # remove values above a threshold allows to remove scale of
-                    # calculation
-                    if self.scale_:
-                        test_image += self.datacube_[:, :, element]
 
                 # If the element is actually a ratio of two elements
                 else:
 
                     # Load of the two images
                     image_over = imread(
-                        self.prefix_ +
-                        self.table_['Element'][element].split('/')[0] +
-                        self.suffix_)
+                        self.prefix
+                        + self.table['Element'][element].split('/')[0]
+                        + self.suffix)
                     image_under = imread(
-                        self.prefix_ +
-                        self.table_['Element'][element].split('/')[1] +
-                        self.suffix_)
+                        self.prefix
+                        + self.table['Element'][element].split('/')[1]
+                        + self.suffix)
 
                     # Normalization of the two images
                     image_over_grey = np.linalg.norm(image_over, axis=2)
@@ -201,125 +244,115 @@ class Mask:
                     # Set 0 values to 0.01 in denominator image in order to
                     # avoid division by 0
                     image_under_grey[image_under_grey == 0.] = 0.01
-                    self.datacube_[
+                    self.data_cube[
                         :, :, element] = image_over_grey / image_under_grey
 
-            # Arbitrary threshold fixed to 3000, but scale option might be
-            # removed
-            if self.scale_:
-                for i in range(len(self.Elements_)):
-                    self.datacube_[:, :, i][test_image > 3000] = np.nan
-
             # Normalization over 100 to every element of the cube
-            for i in range(len(self.Elements_)):
-                self.datacube_[:, :, i] = self.datacube_[
-                    :, :, i] / np.nanmax(self.datacube_[:, :, i]) * 100
+            for i in range(len(self.Elements)):
+                self.data_cube[:, :, i] = self.data_cube[
+                    :, :, i] / np.nanmax(self.data_cube[:, :, i]) * 100
 
         # Check if data are textfiles consisting of raw count data per pixel
-        # per energy domain
-        elif self.suffix_ == '.txt':
-            self.Elements_ = {}
+        # per energy
+        elif self.suffix == '.txt':
+            self.Elements = {}
             # Read the first image to know the dimensions
             test_image = np.loadtxt(
-                self.prefix_ +
-                self.table_.iloc[0][0] +
-                self.suffix_,
+                self.prefix
+                + self.table.iloc[0][0]
+                + self.suffix,
                 delimiter=';')
-            self.datacube_ = np.zeros(
+
+            self.data_cube = np.zeros(
                 (test_image.shape[0],
-                 test_image.shape[1], self.table_.shape[0]))
+                 test_image.shape[1],
+                 self.table.shape[0]))
             test_image[:, :] = 0
 
             # Loop over elements in the table
-            for element in range(self.table_.shape[0]):
-                self.Elements_[element] = self.table_.iloc[element]['Element']
+            for element in range(self.table.shape[0]):
+                self.Elements[element] = self.table.iloc[element]['Element']
 
                 # Check if the element is not a ratio of two elements
-                if '/' not in self.table_.iloc[element]['Element']:
+                if '/' not in self.table.iloc[element]['Element']:
                     # Load of the data count per element
-                    self.datacube_[
-                        :,
-                        :,
-                        element] = np.loadtxt(
-                        self.prefix_ +
-                        self.table_.iloc[element][0] +
-                        self.suffix_,
+                    self.data_cube[:, :, element] = np.loadtxt(
+                        self.prefix
+                        + self.table.iloc[element][0]
+                        + self.suffix,
                         delimiter=';')
-                    if self.echelle_:
-                        test_image += self.datacube_[:, :, element]
 
                 # If the element is actually a ratio of two elements
                 else:
                     image_over_grey = np.loadtxt(
-                        self.prefix_ +
-                        self.table_['Element'][element].split('/')[0] +
-                        self.suffix_,
+                        self.prefix
+                        + self.table['Element'][element].split('/')[0]
+                        + self.suffix,
                         delimiter=';')
                     image_under_grey = np.loadtxt(
-                        self.prefix_ +
-                        self.table_['Element'][element].split('/')[1] +
-                        self.suffix_,
+                        self.prefix
+                        + self.table['Element'][element].split('/')[1]
+                        + self.suffix,
                         delimiter=';')
 
-                    self.datacube_[
+                    self.data_cube[
                         :, :, element] = image_over_grey / image_under_grey
             # If user wants to see normalized over 100 data
             # This option makes impossible intensity comparison over element
-            if self.Normalization_:
-                for i in range(len(self.Elements_)):
-                    self.datacube_[:, :, i] = self.datacube_[
-                        :, :, i] / np.nanmax(self.datacube_[:, :, i]) * 100
+            if self.normalization:
+                for i in range(len(self.Elements)):
+                    self.data_cube[:, :, i] = self.data_cube[
+                        :, :, i] / np.nanmax(self.data_cube[:, :, i]) * 100
 
         # Check if data are .rpl file, that is complete datacube
         # Load of the file using HyperSpy library
-        elif self.suffix_ == '.rpl':
-            cube = hs.load(self.prefix_[:-1] + ".rpl",
-                           signal_type="EDS_SEM", lazy=True)
+        elif self.suffix == '.rpl':
+            cube = hs.load(self.prefix[:-1] + ".rpl",
+                           signal_type="EDS_SEM",
+                           lazy=True)
             cube.axes_manager[-1].name = 'E'
             cube.axes_manager['E'].units = 'keV'
             cube.axes_manager['E'].scale = 0.01
             cube.axes_manager['E'].offset = -0.97
-            self.Elements_ = {}
+            self.Elements = {}
             test = np.linalg.norm(
                 imread(
-                    self.prefix_ +
-                    self.table_.iloc[0][0] +
-                    self.suffix_),
+                    self.prefix
+                    + self.table.iloc[0][0]
+                    + self.suffix),
                 axis=2)
-            self.datacube_ = np.zeros(
-                (test.shape[0], test.shape[1], self.table_.shape[0]))
+            self.data_cube = np.zeros((test.shape[0],
+                                       test.shape[1],
+                                       self.table.shape[0]))
             test[:, :] = 0
 
-            for element in range(self.table_.shape[0]):
-                self.Elements_[element] = self.table_.iloc[element]['Element']
+            for element in range(self.table.shape[0]):
+                self.Elements[element] = self.table.iloc[element]['Element']
 
-                if '/' not in self.table_.iloc[element]['Element']:
-                    cube.set_elements([self.table_.iloc[element]['Element']])
+                if '/' not in self.table.iloc[element]['Element']:
+                    cube.set_elements([self.table.iloc[element]['Element']])
                     array = cube.get_lines_intensity()
-                    self.datacube_[:, :, element] = np.asarray(array[0])
-
-                    if self.echelle_:
-                        test += self.datacube_[:, :, element]
+                    self.data_cube[:, :, element] = np.asarray(array[0])
 
                 else:
                     image_over = imread(
-                        self.prefix_ +
-                        self.table_['Element'][element].split('/')[0] +
-                        self.suffix_)
+                        self.prefix
+                        + self.table['Element'][element].split('/')[0]
+                        + self.suffix)
                     image_under = imread(
-                        self.prefix_ +
-                        self.table_['Element'][element].split('/')[1] +
-                        self.suffix_)
+                        self.prefix
+                        + self.table['Element'][element].split('/')[1]
+                        + self.suffix)
                     image_over_grey = np.linalg.norm(image_over, axis=2)
                     image_under_grey = np.linalg.norm(image_under, axis=2)
                     image_under_grey[image_under_grey == 0.] = 0.001
-                    self.datacube_[
+                    self.data_cube[
                         :, :, element] = image_over_grey / image_under_grey
 
-            if self.Normalisation_:
-                for i in range(len(self.Elements_)):
-                    self.datacube_[:, :, i] = self.datacube_[
-                        :, :, i] / np.nanmax(self.datacube_[:, :, i]) * 100
+            if self.normalization:
+                for i in range(len(self.Elements)):
+                    self.data_cube[:, :, i] = self.data_cube[
+                        :, :, i] / np.nanmax(self.data_cube[:, :, i]) * 100
 
         # Raise Exception to provide valide data type
         else:
@@ -327,7 +360,8 @@ class Mask:
                 are: png, .bmp, .tif, .txt or .rpl ")
 
     def mineralcube_creation(self):
-        """Function that creates a 3D numpy array (X and Y are the dimensions
+        """
+        Create a 3D numpy array (X and Y are the dimensions
         of the sample and Z dimension is the number of minerals wanted for
         the classification).
         The minerals are defined by the columns in the spreadsheet. The 2D
@@ -348,38 +382,56 @@ class Mask:
         2 class files created in that function.
 
         """
+        # Creation of mineral/mask names dictionnary
+        self.Minerals = {}
 
-        self.Minerals_ = {}
-        self.mineralcube_ = np.zeros(
-            (self.datacube_.shape[0],
-             self.datacube_.shape[1],
-             self.table_.shape[1] - 1))
+        # Intializing data cube
+        self.mineral_cube = np.zeros((self.data_cube.shape[0],
+                                      self.data_cube.shape[1],
+                                      self.table.shape[1] - 1))
 
-        for mask in range(1, self.table_.shape[1]):
-            name = self.table_.columns[mask]
-            self.Minerals_[mask - 1] = name
-            str_table = self.table_[name].astype('str', copy=True)
-            index_str = np.where(self.table_[name].notnull())[0]
-            mask_i_str = np.zeros(
-                (self.datacube_.shape[0],
-                 self.datacube_.shape[1],
-                 index_str.shape[0]))
+        # Loop over each mask in order to fill the cube and dictionnary
+        for mask in range(1, self.table.shape[1]):
 
+            # Extract name of the mask
+            name = self.table.columns[mask]
+
+            # Fill the dictionnary, the key being an integer index
+            self.Minerals[mask - 1] = name
+
+            # Values are convert to string in order to facilitate later split
+            str_table = self.table[name].astype('str', copy=True)
+
+            # Keeping indices of elements that are used in a mask
+            index_str = np.where(self.table[name].notnull())[0]
+
+            # Initializing intermediate 3D array
+            mask_i_str = np.zeros((self.data_cube.shape[0],
+                                   self.data_cube.shape[1],
+                                   index_str.shape[0]))
+
+            # Loop over elements of the mask
             for k in range(index_str.shape[0]):
-                mask_i_str[:, :, k] = self.datacube_[:, :, index_str[k]]
+                mask_i_str[:, :, k] = self.data_cube[:, :, index_str[k]]
 
+                # If only one value in the table: it corresponds to minimum
+                # threshold
                 if len(str_table[index_str[k]].split('-')) == 1:
                     threshold_min = float(
                         str_table[index_str[k]].split('-')[0])
                     threshold_max = None
 
+                # If more thant one value (should be 2): it corresponds to the
+                # range of accepted values
                 else:
                     threshold_min = float(
                         str_table[index_str[k]].split('-')[0])
                     threshold_max = float(
                         str_table[index_str[k]].split('-')[1])
 
-                if self.Normalisation_:
+                # If the value are normalized, the threshold is between 0 and
+                # 1: need to compare to maximum value
+                if self.normalization:
                     mask_i_str[:, :, k][mask_i_str[
                         :, :, k] < threshold_min * np.nanmax(
                             mask_i_str[:, :, k])] = np.nan
@@ -388,7 +440,11 @@ class Mask:
                             :, :, k] > threshold_max * np.nanmax(
                                 mask_i_str[:, :, k])] = np.nan
 
+                    # Values outside thresholds are nan, and valid values are
+                    # set to 1
                     mask_i_str[np.isfinite(mask_i_str)] = 1
+
+                # If not normalize, threshold is just the number of counts
                 else:
                     mask_i_str[:, :, k][mask_i_str[:, :, k]
                                         < threshold_min] = np.nan
@@ -396,253 +452,529 @@ class Mask:
                         mask_i_str[:, :, k][mask_i_str[:, :, k]
                                             > threshold_max] = np.nan
 
+                    # Values outside thresholds are nan, and valid values are
+                    # set to 1
                     mask_i_str[np.isfinite(mask_i_str)] = 1
 
+            # 3D array is stacked
             mask_i_str = np.nansum(mask_i_str, axis=2)
+
+            # Mask correspond to maximum values: ones that satisfied all
+            # conditions
             mask_i_str[mask_i_str < np.max(mask_i_str)] = np.nan
-            self.mineralcube_[:, :, mask - 1] = mask_i_str / \
+
+            # Mask cube 2D slice is filled with 1 where mask is true
+            self.mineral_cube[:, :, mask - 1] = mask_i_str / \
                 np.nanmax(mask_i_str)
 
     def get_mask(self, indice: str):
-        """Function that plots the mineral mask wanted
-        Input is the index of the mineral in the 3D array (cube).
         """
+        Plot the mineral mask wanted
+        Input is the index of the mineral in the 3D array (cube).
 
-        indice = list(self.Minerals_.values()).index(str(indice))
+        Parameters
+        ----------
+        indice : str
+            Name of the wanted mask (eg: 'Galene')
+
+        """
+        # Conversion of given string indices to integer indice of the cube
+        indice = list(self.Minerals.values()).index(str(indice))
         fig = plt.figure()
-        plt.imshow(self.mineralcube_[:, :, indice])
-        plt.title(self.Minerals_[indice])
+        plt.imshow(self.mineral_cube[:, :, indice])
+        plt.title(self.Minerals[indice])
         plt.grid()
         plt.show()
 
     def save_mask(self, indice: str):
-        """Function that saves the mineral mask wanted as a .tif file.
-        Input is the index of the mineral in the 3D array (cube).
         """
-        indice = list(self.Minerals_.values()).index(str(indice))
-        plt.imshow(self.mineralcube_[:, :, indice])
-        plt.title(self.Minerals_[indice])
-        plt.savefig('Mask_' + self.Minerals_[indice] + '.tif')
+        Save the mineral mask wanted as a .tif file.
+        Input is the index of the mineral in the 3D array (cube).
+
+        Parameters
+        ----------
+        indice : str
+            Name of the wanted element (eg: 'Fe')
+
+        """
+        # Conversion of given string indices to integer indice of the cube
+        indice = list(self.Minerals.values()).index(str(indice))
+        plt.imshow(self.mineral_cube[:, :, indice])
+        plt.title(self.Minerals[indice])
+        plt.savefig('Mask_' + self.Minerals[indice] + '.tif')
         plt.close()
 
     def get_hist(self, indice: str):
-        """Function that plots the elemental map and the corresponding
-        hitogram of intensity
+        """
+        Plot the elemental map on the left side an
+        the corresponding hitogram of intensity on the right side
         Input is the index of the element in the 3D array
-        Useful function in order to set the threshold in the spreadsheet."""
-        indice = list(self.Elements_.values()).index(str(indice))
+        Useful function in order to set the threshold in the spreadsheet.
+
+        Parameters
+        ----------
+        indice : str
+            Name of the wanted element (eg: 'Fe')
+
+        """
+        # Conversion of given string indices to integer indice of the cube
+        indice = list(self.Elements.values()).index(str(indice))
         fig, axes = plt.subplots(1, 2, figsize=(10, 5))
         ax = axes.ravel()
-        Anan = self.datacube_[:, :, indice][np.isfinite(
-            self.datacube_[:, :, indice])]
-        im = ax[0].imshow(self.datacube_[:, :, indice])
+
+        # Keep only finite values
+        Anan = self.data_cube[:, :, indice][np.isfinite(
+            self.data_cube[:, :, indice])]
+        im = ax[0].imshow(self.data_cube[:, :, indice])
         ax[0].grid()
-        ax[0].set_title("Carte élémentaire : " + self.Elements_[indice])
+        ax[0].set_title("Carte élémentaire : " + self.Elements[indice])
         fig.colorbar(im, ax=ax[0])
         plt.ylim(0, np.max(Anan))
-        sns.distplot(Anan, kde=False, ax=axes[1], hist_kws={
-                     'range': (0.0, np.max(Anan))}, vertical=True)
+        sns.distplot(Anan,
+                     kde=False,
+                     ax=axes[1],
+                     hist_kws={'range': (0.0, np.max(Anan))},
+                     vertical=True)
+
+        # Logarithm scale because background has a lof ot points and flatten
+        # interesting information if linear
         ax[1].set_xscale('log')
-        ax[1].set_title("Histograme d'intensité : " + self.Elements_[indice])
+        ax[1].set_title("Histograme d'intensité : " + self.Elements[indice])
         fig.tight_layout()
         plt.show()
 
     def create_mineral_mask(self):
+        """
+        Create a 2D array that associate each pixel to a mask
+        by assigning a value to each pixel. It also creates a
+        dictionnary containing the relative proportion of a value
+        compared to others.
+        """
+        # Creation of proportion dictionnary
         proportion = {}
-        array = np.zeros((self.datacube_.shape[0], self.datacube_.shape[1]))
+
+        # Initialization of 2D array
+        array = np.zeros((self.data_cube.shape[0], self.data_cube.shape[1]))
+
+        # Convert the array to nan values
         array[np.isfinite(array)] = np.nan
-        for indice in range(len(self.Minerals_)):
-            array[(np.isfinite(self.mineralcube_[:, :, indice])) & (
-                np.nansum(self.mineralcube_, axis=2) == 1)] = indice
-        array[np.where(np.nansum(self.mineralcube_, axis=2) > 1)
-              ] = len(self.Minerals_) + 1
-        for indice in range(len(self.Minerals_)):
+
+        # Loop over the mask to check pixels that are assigned more than once
+        for indice in range(len(self.Minerals)):
+            array[(np.isfinite(self.mineral_cube[:, :, indice])) & (
+                np.nansum(self.mineral_cube, axis=2) == 1)] = indice
+        array[np.where(np.nansum(self.mineral_cube, axis=2) > 1)
+              ] = len(self.Minerals) + 1
+        for indice in range(len(self.Minerals)):
             proportion[indice] = np.where(array == indice)[
                 0].shape[0] / np.sum(np.isfinite(array)) * 100
 
     def plot_mineral_mask(self):
+        """
+        For mineralogy purposes, valid only if all masks are minerals
+        Plot all the mask onto one picture in order to visualize
+        the classification. Each pixel correspond to only one mineral
+        at the time, if not, it is classified as "mixed".
+
+        """
         fig = plt.figure()
+
+        # Creation of proportion dictionnary
         proportion = {}
-        array = np.zeros((self.datacube_.shape[0], self.datacube_.shape[1]))
+
+        # Initialization of 2D array
+        array = np.zeros((self.data_cube.shape[0], self.data_cube.shape[1]))
+
+        # Convert the array to nan values
         array[np.isfinite(array)] = np.nan
-        for indice in range(len(self.Minerals_)):
-            array[(np.isfinite(self.mineralcube_[:, :, indice])) & (
-                np.nansum(self.mineralcube_, axis=2) == 1)] = indice
-        array[np.where(np.nansum(self.mineralcube_, axis=2) > 1)
-              ] = len(self.Minerals_) + 1
-        for indice in range(len(self.Minerals_)):
+
+        # Loop over the mask to check pixels that are assigned more than once
+        for indice in range(len(self.Minerals)):
+            array[(np.isfinite(self.mineral_cube[:, :, indice])) & (
+                np.nansum(self.mineral_cube, axis=2) == 1)] = indice
+        array[np.where(np.nansum(self.mineral_cube, axis=2) > 1)
+              ] = len(self.Minerals) + 1
+
+        # Loop over the mask to calculate proportion of each
+        for indice in range(len(self.Minerals)):
             proportion[indice] = np.where(array == indice)[
                 0].shape[0] / np.sum(np.isfinite(array)) * 100
+
+        # First plot to generate random colors
         im = plt.imshow(array, cmap='Paired')
-        arrray = array[np.isfinite(array)]
-        values = np.unique(arrray.ravel())
+
+        # Store finite values for later purpose
+        finite_values_array = array[np.isfinite(array)]
+
+        # Check if mixed pixels, need to add one more value
+        if np.nansum(
+                self.mineral_cube,
+                axis=2).max() > 1:
+            values = np.arange(len(self.Minerals) + 1)
+        else:
+            values = np.arange(len(self.Minerals))
+
         colors = [im.cmap(im.norm(value)) for value in values]
 
+        # Test if colors where specify in the table
         try:
-            for value in self.Couleurs_:
-                colors[value] = self.Couleurs_[value]
-        except:
+            # If true, specified values are replaced
+            for value in self.colors:
+                colors[value] = self.colors[value]
+        except Exception:
             pass
 
+        # Generating the new colormap
         self.newcmp = ListedColormap(colors)
         plt.close()
+
+        # Open new figure
         fig = plt.figure()
-        im = plt.imshow(array, cmap=self.newcmp)
-        # create a patch (proxy artist) for every color
-        if np.nanmax(array) > len(self.Minerals_):
+        im = plt.imshow(array,
+                        cmap=self.newcmp,
+                        vmin=values.min(),
+                        vmax=values.max())
+
+        # create a patch for every color
+        # If true, there are mixed pixels: need to add a patch of mixte
+        if np.nanmax(array) > len(self.Minerals):
             patches = [
                 mpatches.Patch(
-                    color=colors[
-                        np.where(
-                            values == int(i))[0][0]], label="{} : {} %".format(
-                        self.Minerals_[
-                            int(i)], str(
+                    color=colors[np.where(
+                        values == int(i))[0][0]],
+                    label="{} : {} %".format(
+                        self.Minerals[int(i)],
+                        str(
                             round(
                                 proportion[
-                                    int(i)], 2)))) for i in values[
-                                        :-1] if round(
-                                            proportion[
-                                                int(i)], 2) > 0]
+                                    int(i)],
+                                2)))) for i in values[
+                    :-1] if round(
+                    proportion[
+                        int(i)], 2) > 0]
+
             patches.append(mpatches.Patch(
-                color=colors[-1], label="{} : {} %".format(
-                    'Mixtes', str(round(
+                color=colors[-1],
+                label="{} : {} %".format(
+                    'Mixtes',
+                    str(round(
                         np.where(array == np.nanmax(
                             array))[0].shape[0] / np.sum(
-                            np.isfinite(array)) * 100, 2)))))
+                            np.isfinite(array)) * 100,
+                        2)))))
+
+        # If False, just add patches of corresponding masks
         else:
             patches = [
                 mpatches.Patch(
                     color=colors[
                         np.where(
-                            values == int(i))[0][0]], label="{} : {} %".format(
-                        self.Minerals_[
+                            values == int(i))[0][0]],
+                    label="{} : {} %".format(
+                        self.Minerals[
                             int(i)], str(
                             round(
                                 proportion[
                                     int(i)], 2)))) for i in values[:] if round(
                                         proportion[
                                             int(i)], 2) > 0]
+
+        # Finally add a patch to specify proporty of non-classified pixel
+        # Two reasons : images is bigger than sample or misclassification
         patches.append(
             mpatches.Patch(
-                color='white', label="{} : {} %".format(
+                color='white',
+                label="{} : {} %".format(
                     'Non indexés', str(
                         round(
-                            (self.datacube_.shape[0] * self.datacube_.shape[1] - len(arrray)) / (
-                                self.datacube_.shape[0] * self.datacube_.shape[1]) * 100, 2)))))
-        # put those patched as legend-handles into the legend
-        plt.legend(handles=patches, bbox_to_anchor=(
-            1.05, 1), loc=2, borderaxespad=0.)
+                            (self.data_cube.shape[0]
+                                * self.data_cube.shape[1]
+                                - len(finite_values_array))
+                            / (self.data_cube.shape[0]
+                               * self.data_cube.shape[1])
+                            * 100, 2)))))
+
+        # Add patches to the legend
+        plt.legend(handles=patches,
+                   bbox_to_anchor=(1.05, 1),
+                   loc=2,
+                   borderaxespad=0.)
         plt.grid(True)
-        plt.title("Classificiation minéralogique - " + self.prefix_[:-1])
+        plt.title("Classification minéralogique - " + self.prefix[:-1])
         plt.tight_layout()
         plt.show()
 
     def get_masked_element(self, element: str, mineral: str):
-        """ Function that plots the elemental map and the histogram
-        associated only in a specific mask.
         """
-        element = list(self.Elements_.values()).index(str(element))
-        mineral = list(self.Minerals_.values()).index(str(mineral))
+        Plot the elemental map and the histogram
+        associated only in a specific mask.
+
+        Parameters
+        ----------
+        element : str
+            Name of the wanted element (eg: 'Fe')
+        mineral : str
+            Name of the wanted mask (eg: 'Galene')
+
+        """
+        # Conversion of given string indices to integer indices of the cubes
+        element = list(self.Elements.values()).index(str(element))
+        mineral = list(self.Minerals.values()).index(str(mineral))
         fig, axes = plt.subplots(1, 2, figsize=(10, 5))
         ax = axes.ravel()
-        Anan = self.datacube_[:, :, element][np.isfinite(
-            self.datacube_[:, :, element])]
-        array = self.datacube_[:, :, element]
-        array[np.isnan(self.mineralcube_[:, :, mineral])] = 0
+        Anan = self.data_cube[:, :, element][np.isfinite(
+            self.data_cube[:, :, element])]
+        array = self.data_cube[:, :, element]
+        array[np.isnan(self.mineral_cube[:, :, mineral])] = 0
         im = ax[0].imshow(array)
         ax[0].grid()
         ax[0].set_title("Carte élémentaire de {} masquéé par {}".format(
-            self.Elements_[element], self.Minerals_[mineral]))
+            self.Elements[element], self.Minerals[mineral]))
         fig.colorbar(im, ax=ax[0])
         plt.ylim(0, np.max(Anan))
         sns.distplot(Anan, kde=False, ax=axes[1], hist_kws={
                      'range': (0.0, np.max(Anan))}, vertical=True)
         ax[1].set_xscale('log')
-        ax[1].set_title("Histograme d'intensité : " + self.Elements_[element])
+        ax[1].set_title("Histograme d'intensité : " + self.Elements[element])
         fig.tight_layout()
         plt.show()
 
     def cube_masking_keep(self, mineral: str):
-        """Function that recreates a raw datacube containing data only
-        in the wanted mask.
         """
-        mineral = list(self.Minerals_.values()).index(str(mineral))
-        cube = hs.load(self.prefix_[:-1] + ".rpl",
-                       signal_type="EDS_SEM", lazy=True)
+        Recreates a raw datacube containing data only
+        in the wanted mask.
+
+        Parameters
+        ----------
+        mineral : str
+            Name of the wanted mask (eg: 'Galene')
+
+        """
+        # Conversion of given string indices to integer indice of the cube
+        mineral = list(self.Minerals.values()).index(str(mineral))
+        cube = hs.load(self.prefix[:-1] + ".rpl",
+                       signal_type="EDS_SEM",
+                       lazy=True)
         array = np.asarray(cube)
-        array[np.isnan(self.mineralcube_[:, :, mineral])] = 0
+        array[np.isnan(self.mineral_cube[:, :, mineral])] = 0
         cube = hs.signals.Signal1D(array)
-        cube.save(self.prefix_[:-1] + '_mask_kept_' +
-                  self.Minerals_[mineral] + ".rpl", encoding='utf8')
-        f = open(self.prefix_[:-1] + ".rpl", "r")
-        output = open(self.prefix_[:-1] + '_mask_kept_' +
-                      self.Minerals_[mineral] + ".rpl", 'w')
+        cube.save(self.prefix[:-1] + '_mask_kept_' +
+                  self.Minerals[mineral] + ".rpl",
+                  encoding='utf8')
+        f = open(self.prefix[:-1] + ".rpl", "r")
+        output = open(self.prefix[:-1] + '_mask_kept_' +
+                      self.Minerals[mineral] + ".rpl",
+                      'w')
         output.write(f.read())
         f.close()
         output.close()
 
     def cube_masking_remove(self, mineral: str):
-        """Function that recreates a raw datacube containing all the
-        data without the mask not wanted.
         """
-        mineral = list(self.Minerals_.values()).index(str(mineral))
-        cube = hs.load(self.prefix_[:-1] + ".rpl",
-                       signal_type="EDS_SEM", lazy=True)
+        Recreates a raw datacube containing all the
+        data without the mask not wanted.
+
+        Parameters
+        ----------
+        mineral : str
+            Name of the wanted mask (eg: 'Galene')
+
+        """
+        # Conversion of given string indices to integer indice of the cube
+        mineral = list(self.Minerals.values()).index(str(mineral))
+        cube = hs.load(self.prefix[:-1] + ".rpl",
+                       signal_type="EDS_SEM",
+                       lazy=True)
         array = np.asarray(cube)
-        array[np.isfinite(self.mineralcube_[:, :, mineral])] = 0
+        array[np.isfinite(self.mineral_cube[:, :, mineral])] = 0
         cube = hs.signals.Signal1D(array)
-        cube.save(self.prefix_[:-1] + '_mask_removed_' +
-                  self.Minerals_[mineral] + ".rpl", encoding='utf8')
-        f = open(self.prefix_[:-1] + ".rpl", "r")
-        output = open(self.prefix_[:-1] + '_mask_removed_' +
-                      self.Minerals_[mineral] + ".rpl", 'w')
+        cube.save(self.prefix[:-1] + '_mask_removed_' +
+                  self.Minerals[mineral] + ".rpl",
+                  encoding='utf8')
+        f = open(self.prefix[:-1] + ".rpl", "r")
+        output = open(self.prefix[:-1] + '_mask_removed_' +
+                      self.Minerals[mineral] + ".rpl",
+                      'w')
         output.write(f.read())
         f.close()
         output.close()
 
     def get_biplot(self, indicex: str, indicey: str):
-        """Function that plots one element against another one in a
-        scatter plot
+        """
+        Plot one element against another one in a scatter plot
         Input is the indexes of each of the two element in the 3D array
         Useful function in order to see elemental ratios and some
-        elemental thresholds."""
-        indicex = list(self.Elements_.values()).index(str(indicex))
-        indicey = list(self.Elements_.values()).index(str(indicey))
+        elemental thresholds.
+
+        Parameters
+        ----------
+        indicex : str
+            Name of the wanted element on x axis (eg: 'Fe')
+        indicey : str
+            Name of the wanted element on y axis (eg: 'Pb')
+
+        """
+        # Conversion of given string indices to integer indices of the cubes
+        indicex = list(self.Elements.values()).index(str(indicex))
+        indicey = list(self.Elements.values()).index(str(indicey))
         fig, axes = plt.subplots()
-        Valuesx = self.datacube_[
-            :, :, indicex][np.isfinite(self.datacube_[:, :, indicex])]
-        Valuesy = self.datacube_[
-            :, :, indicey][np.isfinite(self.datacube_[:, :, indicey])]
+
+        # Number of points limited to 100,000 for computationnal time
+
+        Valuesx = self.data_cube[
+            :, :, indicex][np.isfinite(self.data_cube[:, :, indicex])]
+        Valuesy = self.data_cube[
+            :, :, indicey][np.isfinite(self.data_cube[:, :, indicey])]
+
+        data = {'x': Valuesx, 'y': Valuesy}
+        df = pd.DataFrame(data)
+
+        # Limit number of samples to 100,000
+        if len(df) > 100000:
+            print('Number of points limited to 100000')
+            df = df.sample(n=100000)
+            df = df.reset_index().drop(columns=['index'])
         plt.xlim(0, np.max(Valuesx))
         plt.ylim(0, np.max(Valuesy))
-        plt.xlabel(str(self.Elements_[indicex]))
-        plt.ylabel(str(self.Elements_[indicey]))
-        sns.scatterplot(x=Valuesx, y=Valuesy, alpha=0.3, marker="+")
+        plt.xlabel(str(self.Elements[indicex]))
+        plt.ylabel(str(self.Elements[indicey]))
+        sns.scatterplot(x=df.x, y=df.y, alpha=0.3, marker="+")
         fig.tight_layout()
         plt.show()
 
     def get_triplot(self, indicex: str, indicey: str, indicez: str):
-        """Function that plots one element against another one in a scatter
-        plot
+        """
+        Plot one element against another one in a scatter plot
         Input is the indexes of each of the two element in the 3D array
         Useful function in order to see elemental ratios and some elemental
-        thresholds."""
-        indicex = list(self.Elements_.values()).index(str(indicex))
-        indicey = list(self.Elements_.values()).index(str(indicey))
-        indicez = list(self.Elements_.values()).index(str(indicez))
+        thresholds.
+
+        Parameters
+        ----------
+        indicex : str
+            Name of the wanted element on x axis(eg: 'Fe')
+        indicey : str
+            Name of the wanted element on y axis (eg: 'Pb')
+        indicez : str
+            Name of the wanted element on colorscale (eg: 'Cu')
+
+        """
+        # Conversion of given string indices to integer indices of the cubes
+        indicex = list(self.Elements.values()).index(str(indicex))
+        indicey = list(self.Elements.values()).index(str(indicey))
+        indicez = list(self.Elements.values()).index(str(indicez))
         fig, axes = plt.subplots()
-        Valuesx = self.datacube_[
-            :, :, indicex][np.isfinite(self.datacube_[:, :, indicex])]
-        Valuesy = self.datacube_[
-            :, :, indicey][np.isfinite(self.datacube_[:, :, indicey])]
-        Valuesz = self.datacube_[
-            :, :, indicez][np.isfinite(self.datacube_[:, :, indicez])]
+        Valuesx = self.data_cube[
+            :, :, indicex][np.isfinite(self.data_cube[:, :, indicex])]
+        Valuesy = self.data_cube[
+            :, :, indicey][np.isfinite(self.data_cube[:, :, indicey])]
+        Valuesz = self.data_cube[
+            :, :, indicez][np.isfinite(self.data_cube[:, :, indicez])]
+
+        data = {'x': Valuesx, 'y': Valuesy, 'z': Valuesz}
+        df = pd.DataFrame(data)
+
+        if len(df) > 100000:
+            print('Number of points limited to 100000')
+            df = df.sample(n=100000)
+            df = df.reset_index().drop(columns=['index'])
+
         plt.xlim(0, np.max(Valuesx))
         plt.ylim(0, np.max(Valuesy))
-        plt.xlabel(str(self.Elements_[indicex]))
-        plt.ylabel(str(self.Elements_[indicey]))
-        plt.title(str(self.Elements_[indicez]))
-        sns.scatterplot(x=Valuesx, y=Valuesy, hue=Valuesz,
-                        alpha=0.3, marker="+")
+        plt.xlabel(str(self.Elements[indicex]))
+        plt.ylabel(str(self.Elements[indicey]))
+        plt.title(str(self.Elements[indicez]))
+        sns.scatterplot(x=df.x,
+                        y=df.y,
+                        hue=df.z,
+                        alpha=0.3,
+                        marker="+")
         fig.tight_layout()
         plt.show()
+
+    def get_ternary_plot(self, left: str, right: str, bottom: str):
+        """
+        Plot ternary,plot
+        Input is the indexes of each of the two element in the 3D array
+        Useful function in order to see elemental ratios and some elemental
+        thresholds.
+
+        Parameters
+        ----------
+        indicex : str
+            Name of the wanted element on x axis(eg: 'Fe')
+        indicey : str
+            Name of the wanted element on y axis (eg: 'Pb')
+        indicez : str
+            Name of the wanted element on colorscale (eg: 'Cu')
+
+        """
+        # Conversion of given string indices to integer indices of the cubes
+        indicex = list(self.Elements.values()).index(str(left))
+        indicey = list(self.Elements.values()).index(str(right))
+        indicez = list(self.Elements.values()).index(str(bottom))
+
+        Valuesx = self.data_cube[
+            :, :, indicex][np.isfinite(self.data_cube[:, :, indicex])]
+        Valuesy = self.data_cube[
+            :, :, indicey][np.isfinite(self.data_cube[:, :, indicey])]
+        Valuesz = self.data_cube[
+            :, :, indicez][np.isfinite(self.data_cube[:, :, indicez])]
+
+        data = {'x': Valuesx, 'y': Valuesy, 'z': Valuesz}
+        df = pd.DataFrame(data)
+
+        if len(df) > 100000:
+            print('Number of points limited to 100000')
+            df = df.sample(n=100000)
+            df = df.reset_index().drop(columns=['index'])
+        scale = 100
+        figure, tax = ternary.figure(scale=scale)
+        tax.boundary(linewidth=2.0)
+        tax.gridlines(multiple=5, color="blue")
+
+        fontsize = 12
+        offset = 0.14
+        tax.left_axis_label(str(self.Elements[indicex]),
+                            fontsize=fontsize,
+                            offset=offset)
+        tax.right_axis_label(str(self.Elements[indicey]),
+                             fontsize=fontsize,
+                             offset=offset)
+        tax.bottom_axis_label(str(self.Elements[indicez]),
+                              fontsize=fontsize,
+                              offset=offset)
+
+        # Plot a few different styles with a legend
+        points = df.to_numpy()
+        tax.scatter(points, s=5, marker='s', color='blue')
+        tax.ticks(axis='lbr', linewidth=1, multiple=5)
+        tax.get_axes().axis('off')
+
+        tax.show()
+
+    def save_mask_spectrum(self, mask: str):
+        """Save the mean spectrum of a given mask as a txt file
+        First column is channel
+        Second column is counts
+
+        Parameters
+        ----------
+        mask : str
+            Name of the wanted mask (eg: 'Galene')
+
+        """
+
+        mineral = list(self.Minerals.values()).index(
+            str(mask))
+        cube = hs.load(self.prefix[:-1] + ".rpl",
+                       signal_type="EDS_SEM",
+                       lazy=True)
+        array = np.asarray(cube)
+        array[np.isnan(self.mineral_cube[:, :, mineral])] = 0
+        cube = hs.signals.Signal1D(array)
+        spectrum = cube.sum().data
+        d = {'Counts': spectrum}
+        dataframe = pd.DataFrame(data=d)
+        dataframe.index.name = 'channel'
+        dataframe.to_csv(mask + '_mean_spectrum.txt')
