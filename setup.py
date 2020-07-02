@@ -16,7 +16,8 @@ setup(
         'scikit-image',
         'numpy',
         'seaborn',
-        'hyperspy'
+        'hyperspy',
+        'ternary-plot'
     ],
     zip_safe=False
 )
