@@ -32,7 +32,9 @@ import seaborn as sns
 import matplotlib.patches as mpatches
 import hyperspy.api as hs
 from matplotlib.colors import ListedColormap
+import ternary
 hs.preferences.GUIs.warn_if_guis_are_missing = False
+hs.preferences.save()
 ######################################################
 __author__ = "Hadrien Meyer"
 __organization__ = "ENSG - UMR GeoRessources N°7359 - Université de Lorraine"
@@ -604,6 +606,7 @@ class Mask:
         # Store finite values for later purpose
         finite_values_array = array[np.isfinite(array)]
 
+        # Check if mixed pixels, need to add one more value
         if np.nansum(
                 self.mineral_cube,
                 axis=2).max() > 1:
@@ -815,15 +818,27 @@ class Mask:
         indicex = list(self.Elements.values()).index(str(indicex))
         indicey = list(self.Elements.values()).index(str(indicey))
         fig, axes = plt.subplots()
+
+        # Number of points limited to 100,000 for computationnal time
+
         Valuesx = self.data_cube[
             :, :, indicex][np.isfinite(self.data_cube[:, :, indicex])]
         Valuesy = self.data_cube[
             :, :, indicey][np.isfinite(self.data_cube[:, :, indicey])]
+
+        data = {'x': Valuesx, 'y': Valuesy}
+        df = pd.DataFrame(data)
+
+        # Limit number of samples to 100,000
+        if len(df) > 100000:
+            print('Number of points limited to 100000')
+            df = df.sample(n=100000)
+            df = df.reset_index().drop(columns=['index'])
         plt.xlim(0, np.max(Valuesx))
         plt.ylim(0, np.max(Valuesy))
         plt.xlabel(str(self.Elements[indicex]))
         plt.ylabel(str(self.Elements[indicey]))
-        sns.scatterplot(x=Valuesx, y=Valuesy, alpha=0.3, marker="+")
+        sns.scatterplot(x=df.x, y=df.y, alpha=0.3, marker="+")
         fig.tight_layout()
         plt.show()
 
@@ -855,18 +870,88 @@ class Mask:
             :, :, indicey][np.isfinite(self.data_cube[:, :, indicey])]
         Valuesz = self.data_cube[
             :, :, indicez][np.isfinite(self.data_cube[:, :, indicez])]
+
+        data = {'x': Valuesx, 'y': Valuesy, 'z': Valuesz}
+        df = pd.DataFrame(data)
+
+        if len(df) > 100000:
+            print('Number of points limited to 100000')
+            df = df.sample(n=100000)
+            df = df.reset_index().drop(columns=['index'])
+
         plt.xlim(0, np.max(Valuesx))
         plt.ylim(0, np.max(Valuesy))
         plt.xlabel(str(self.Elements[indicex]))
         plt.ylabel(str(self.Elements[indicey]))
         plt.title(str(self.Elements[indicez]))
-        sns.scatterplot(x=Valuesx,
-                        y=Valuesy,
-                        hue=Valuesz,
+        sns.scatterplot(x=df.x,
+                        y=df.y,
+                        hue=df.z,
                         alpha=0.3,
                         marker="+")
         fig.tight_layout()
         plt.show()
+
+    def get_ternary_plot(self, left: str, right: str, bottom: str):
+        """
+        Plot ternary,plot
+        Input is the indexes of each of the two element in the 3D array
+        Useful function in order to see elemental ratios and some elemental
+        thresholds.
+
+        Parameters
+        ----------
+        indicex : str
+            Name of the wanted element on x axis(eg: 'Fe')
+        indicey : str
+            Name of the wanted element on y axis (eg: 'Pb')
+        indicez : str
+            Name of the wanted element on colorscale (eg: 'Cu')
+
+        """
+        # Conversion of given string indices to integer indices of the cubes
+        indicex = list(self.Elements.values()).index(str(left))
+        indicey = list(self.Elements.values()).index(str(right))
+        indicez = list(self.Elements.values()).index(str(bottom))
+
+        Valuesx = self.data_cube[
+            :, :, indicex][np.isfinite(self.data_cube[:, :, indicex])]
+        Valuesy = self.data_cube[
+            :, :, indicey][np.isfinite(self.data_cube[:, :, indicey])]
+        Valuesz = self.data_cube[
+            :, :, indicez][np.isfinite(self.data_cube[:, :, indicez])]
+
+        data = {'x': Valuesx, 'y': Valuesy, 'z': Valuesz}
+        df = pd.DataFrame(data)
+
+        if len(df) > 100000:
+            print('Number of points limited to 100000')
+            df = df.sample(n=100000)
+            df = df.reset_index().drop(columns=['index'])
+        scale = 100
+        figure, tax = ternary.figure(scale=scale)
+        tax.boundary(linewidth=2.0)
+        tax.gridlines(multiple=5, color="blue")
+
+        fontsize = 12
+        offset = 0.14
+        tax.left_axis_label(str(self.Elements[indicex]),
+                            fontsize=fontsize,
+                            offset=offset)
+        tax.right_axis_label(str(self.Elements[indicey]),
+                             fontsize=fontsize,
+                             offset=offset)
+        tax.bottom_axis_label(str(self.Elements[indicez]),
+                              fontsize=fontsize,
+                              offset=offset)
+
+        # Plot a few different styles with a legend
+        points = df.to_numpy()
+        tax.scatter(points, s=5, marker='s', color='blue')
+        tax.ticks(axis='lbr', linewidth=1, multiple=5)
+        tax.get_axes().axis('off')
+
+        tax.show()
 
     def save_mask_spectrum(self, mask: str):
         """Save the mean spectrum of a given mask as a txt file
@@ -879,8 +964,6 @@ class Mask:
             Name of the wanted mask (eg: 'Galene')
 
         """
-        if self.suffix != '.rpl':
-            raise TypeError('Data files must be .rpl')
 
         mineral = list(self.Minerals.values()).index(
             str(mask))
@@ -890,7 +973,7 @@ class Mask:
         array = np.asarray(cube)
         array[np.isnan(self.mineral_cube[:, :, mineral])] = 0
         cube = hs.signals.Signal1D(array)
-        spectrum = cube.sum().dataè
+        spectrum = cube.sum().data
         d = {'Counts': spectrum}
         dataframe = pd.DataFrame(data=d)
         dataframe.index.name = 'channel'
