@@ -16,4 +16,4 @@ from marcia.mask import Mask
 ```
 
 ## Gallery
-![Example](https://github.com/hameye/MARCIA/blob/dev/gallery.png)
+![Example](https://github.com/hameye/MARCIA/blob/master/gallery.png)
