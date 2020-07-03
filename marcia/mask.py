@@ -592,12 +592,12 @@ class Mask:
                 colors[value] = self.colors[value]
 
         # Generating the new colormap
-        newcmp = ListedColormap(colors)
+        new_colormap = ListedColormap(colors)
 
         # Open new figure
         fig = plt.figure()
         im = plt.imshow(array,
-                        cmap=newcmp,
+                        cmap=new_colormap,
                         vmin=values.min(),
                         vmax=values.max())
 
