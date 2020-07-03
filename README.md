@@ -7,7 +7,7 @@
 ## Install
 Just do 
 ```bash
-pip install git+ssh://git@github.com/hameye/marcia.git
+pip install marcia
 ``` 
 
 ## Use in python
