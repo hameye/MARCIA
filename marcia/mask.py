@@ -60,37 +60,13 @@ class Mask:
     The spreadsheet can contain elemental and ratios querries and also a line
     for the color querries.
 
-    Attributes
-    ----------
-    colors : dict
-        Description
-    data_cube : TYPE
-        Description
-    Elements : dict
-        Description
-    mineral_cube : TYPE
-        Description
-    Minerals : dict
-        Description
-    newcmp : TYPE
-        Description
-    normalization : TYPE
-        Description
-    prefix : TYPE
-        Description
-    suffix : TYPE
-        Description
-    table : TYPE
-        Description
-    table_name : TYPE
-        Description
     """
 
     def __init__(self,
                  prefix: str,
                  suffix: str,
                  table: str,
-                 normalization: bool = False):
+                 normalization: bool = True):
         """
         Initialization of the class.
         Extraction of the suffix of the file in order to know how to treat it.
@@ -135,8 +111,9 @@ class Mask:
 
         else:
             raise Exception(
-                f"Please provide valid Table format."
-                f"Valid data types are: png, .bmp, .tif, .txt or .rpl ")
+                f"{self.table_name.split('.')[-1]} "
+                f"invalid Table format."
+                f"Valid data types are: .csv, .txt, or .xls ")
 
         # Check if table has specific colors for the masks
         if self.table['Element'].str.contains('ouleur').any():
@@ -315,16 +292,7 @@ class Mask:
             cube.axes_manager['E'].scale = 0.01
             cube.axes_manager['E'].offset = -0.97
             self.Elements = {}
-            test = np.linalg.norm(
-                imread(
-                    self.prefix
-                    + self.table.iloc[0][0]
-                    + self.suffix),
-                axis=2)
-            self.data_cube = np.zeros((test.shape[0],
-                                       test.shape[1],
-                                       self.table.shape[0]))
-            test[:, :] = 0
+            self.data_cube = np.zeros(np.zeros(cube.axes_manager.shape))
 
             for element in range(self.table.shape[0]):
                 self.Elements[element] = self.table.iloc[element]['Element']
@@ -335,19 +303,18 @@ class Mask:
                     self.data_cube[:, :, element] = np.asarray(array[0])
 
                 else:
-                    image_over = imread(
-                        self.prefix
-                        + self.table['Element'][element].split('/')[0]
-                        + self.suffix)
-                    image_under = imread(
-                        self.prefix
-                        + self.table['Element'][element].split('/')[1]
-                        + self.suffix)
-                    image_over_grey = np.linalg.norm(image_over, axis=2)
-                    image_under_grey = np.linalg.norm(image_under, axis=2)
-                    image_under_grey[image_under_grey == 0.] = 0.001
+                    cube.set_elements(
+                        [self.table['Element'][element].split('/')[0]])
+                    array = cube.get_lines_intensity()
+                    image_over = np.asarray(array[0])
+                    cube.set_elements(
+                        [self.table['Element'][element].split('/')[1]])
+                    array = cube.get_lines_intensity()
+                    image_under = np.asarray(array[0])
+
+                    image_under[image_under == 0.] = 0.001
                     self.data_cube[
-                        :, :, element] = image_over_grey / image_under_grey
+                        :, :, element] = image_over / image_under
 
             if self.normalization:
                 for i in range(len(self.Elements)):
@@ -356,8 +323,9 @@ class Mask:
 
         # Raise Exception to provide valide data type
         else:
-            raise Exception("Please input valid data type. Valid data types\
-                are: png, .bmp, .tif, .txt or .rpl ")
+            raise Exception(f"{self.prefix} invalid data type. "
+                            f"Valid data types are: "
+                            f"png, .bmp, .tif, .txt or .rpl ")
 
     def mineralcube_creation(self):
         """
@@ -523,17 +491,17 @@ class Mask:
         ax = axes.ravel()
 
         # Keep only finite values
-        Anan = self.data_cube[:, :, indice][np.isfinite(
+        finite_data = self.data_cube[:, :, indice][np.isfinite(
             self.data_cube[:, :, indice])]
         im = ax[0].imshow(self.data_cube[:, :, indice])
         ax[0].grid()
         ax[0].set_title("Carte élémentaire : " + self.Elements[indice])
         fig.colorbar(im, ax=ax[0])
-        plt.ylim(0, np.max(Anan))
-        sns.distplot(Anan,
+        plt.ylim(0, np.max(finite_data))
+        sns.distplot(finite_data,
                      kde=False,
                      ax=axes[1],
-                     hist_kws={'range': (0.0, np.max(Anan))},
+                     hist_kws={'range': (0.0, np.max(finite_data))},
                      vertical=True)
 
         # Logarithm scale because background has a lof ot points and flatten
@@ -568,6 +536,7 @@ class Mask:
         for indice in range(len(self.Minerals)):
             proportion[indice] = np.where(array == indice)[
                 0].shape[0] / np.sum(np.isfinite(array)) * 100
+        return array
 
     def plot_mineral_mask(self):
         """
@@ -615,23 +584,20 @@ class Mask:
             values = np.arange(len(self.Minerals))
 
         colors = [im.cmap(im.norm(value)) for value in values]
-
+        plt.close()
         # Test if colors where specify in the table
-        try:
+        if self.colors:
             # If true, specified values are replaced
             for value in self.colors:
                 colors[value] = self.colors[value]
-        except Exception:
-            pass
 
         # Generating the new colormap
-        self.newcmp = ListedColormap(colors)
-        plt.close()
+        newcmp = ListedColormap(colors)
 
         # Open new figure
         fig = plt.figure()
         im = plt.imshow(array,
-                        cmap=self.newcmp,
+                        cmap=newcmp,
                         vmin=values.min(),
                         vmax=values.max())
 
@@ -656,7 +622,7 @@ class Mask:
             patches.append(mpatches.Patch(
                 color=colors[-1],
                 label="{} : {} %".format(
-                    'Mixtes',
+                    'Misclassified',
                     str(round(
                         np.where(array == np.nanmax(
                             array))[0].shape[0] / np.sum(
@@ -685,7 +651,7 @@ class Mask:
             mpatches.Patch(
                 color='white',
                 label="{} : {} %".format(
-                    'Non indexés', str(
+                    'Not classified', str(
                         round(
                             (self.data_cube.shape[0]
                                 * self.data_cube.shape[1]
@@ -700,7 +666,7 @@ class Mask:
                    loc=2,
                    borderaxespad=0.)
         plt.grid(True)
-        plt.title("Classification minéralogique - " + self.prefix[:-1])
+        plt.title("Mineralogical classification - " + self.prefix[:-1])
         plt.tight_layout()
         plt.show()
 
