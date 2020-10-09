@@ -747,23 +747,61 @@ class Mask:
 
         """
         # Conversion of given string indices to integer indice of the cube
-        mineral = list(self.Minerals.values()).index(str(mineral))
-        cube = hs.load(self.prefix[:-1] + ".rpl",
-                       signal_type="EDS_SEM",
-                       lazy=True)
-        array = np.asarray(cube)
-        array[np.isfinite(self.mineral_cube[:, :, mineral])] = 0
-        cube = hs.signals.Signal1D(array)
-        cube.save(self.prefix[:-1] + '_mask_removed_' +
-                  self.Minerals[mineral] + ".rpl",
-                  encoding='utf8')
-        f = open(self.prefix[:-1] + ".rpl", "r")
-        output = open(self.prefix[:-1] + '_mask_removed_' +
+        if mineral == 'mixed':
+            a = self.create_mineral_mask()[0]
+            mixed = np.where(a < np.nanmax(a), np.nan, a)
+            cube = hs.load(self.prefix[:-1] + ".rpl",
+                           signal_type="EDS_SEM",
+                           lazy=True)
+            array = np.asarray(cube)
+            array[np.isfinite(mixed)] = 0
+            cube = hs.signals.Signal1D(array)
+            cube.save(self.prefix[:-1] + '_mask_removed_mixed' + ".rpl",
+                      encoding='utf8')
+            f = open(self.prefix[:-1] + ".rpl", "r")
+            output = open(self.prefix[:-1] + '_mask_removed_mixed' + ".rpl",
+                          'w')
+            output.write(f.read())
+            f.close()
+            output.close()
+
+        elif mineral == 'not indexed':
+            a = self.create_mineral_mask()[0]
+            nan = np.where(np.isnan(a), 0, a)
+            cube = hs.load(self.prefix[:-1] + ".rpl",
+                           signal_type="EDS_SEM",
+                           lazy=True)
+            array = np.asarray(cube)
+            array[np.isfinite(nan)] = 0
+            cube = hs.signals.Signal1D(array)
+            cube.save(self.prefix[:-1] + '_mask_removed_nan' +
+                      ".rpl",
+                      encoding='utf8')
+            f = open(self.prefix[:-1] + ".rpl", "r")
+            output = open(self.prefix[:-1] + '_mask_removed_nan' +
+                          + ".rpl",
+                          'w')
+            output.write(f.read())
+            f.close()
+            output.close()
+        else:
+            mineral = list(self.Minerals.values()).index(str(mineral))
+            cube = hs.load(self.prefix[:-1] + ".rpl",
+                           signal_type="EDS_SEM",
+                           lazy=True)
+            array = np.asarray(cube)
+            array[np.isfinite(self.mineral_cube[:, :, mineral])] = 0
+            cube = hs.signals.Signal1D(array)
+            cube.save(self.prefix[:-1] + '_mask_removed_' +
                       self.Minerals[mineral] + ".rpl",
-                      'w')
-        output.write(f.read())
-        f.close()
-        output.close()
+                      encoding='utf8')
+            f = open(self.prefix[:-1] + ".rpl", "r")
+            output = open(self.prefix[:-1] + '_mask_removed_' +
+                          self.Minerals[mineral] + ".rpl",
+                          'w')
+            output.write(f.read())
+            f.close()
+            output.close()
 
     def get_biplot(self, indicex: str, indicey: str):
         """
