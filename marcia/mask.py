@@ -164,7 +164,7 @@ class Mask:
 
         """
         # Check if the data files are images
-        if self.suffix in ('.bmp', '.tif', '.jpg'):
+        if self.suffix in ('.bmp', '.tif', '.jpg', '.png'):
 
             # Set automatic normalization to True
             self.normalization = True
@@ -328,7 +328,7 @@ class Mask:
         else:
             raise Exception(f"{self.prefix} invalid data type. "
                             f"Valid data types are: "
-                            f"png, .bmp, .tif, .txt or .rpl ")
+                            f".png, .bmp, .tif, .txt or .rpl ")
 
     def mineralcube_creation(self):
         """
