@@ -32,7 +32,7 @@ import seaborn as sns
 import matplotlib.patches as mpatches
 import hyperspy.api as hs
 from matplotlib.colors import ListedColormap
-import ternary
+from PIL import Image
 hs.preferences.GUIs.warn_if_guis_are_missing = False
 hs.preferences.save()
 ######################################################
@@ -94,6 +94,7 @@ class Mask:
         self.suffix = suffix
         self.normalization = normalization
         self.table_name = table
+        self.colors = None
 
     def load_table(self):
         """
@@ -116,9 +117,9 @@ class Mask:
                 f"Valid data types are: .csv, .txt, or .xls ")
 
         # Check if table has specific colors for the masks
-        if self.table['Element'].str.contains('ouleur').any():
+        if self.table['Element'].str.contains('ouleur|olor').any():
             indice = np.where(
-                self.table['Element'].str.contains('ouleur'))[0][0]
+                self.table['Element'].str.contains('ouleur|olor'))[0][0]
 
             # Creation of dictionnary containing the colors
             self.colors = {}
@@ -163,7 +164,7 @@ class Mask:
 
         """
         # Check if the data files are images
-        if self.suffix in ('.bmp', '.tif', '.jpg'):
+        if self.suffix in ('.bmp', '.tif', '.jpg', '.png'):
 
             # Set automatic normalization to True
             self.normalization = True
@@ -284,7 +285,7 @@ class Mask:
         # Check if data are .rpl file, that is complete datacube
         # Load of the file using HyperSpy library
         elif self.suffix == '.rpl':
-            cube = hs.load(self.prefix[:-1] + ".rpl",
+            cube = hs.load(self.prefix + ".rpl",
                            signal_type="EDS_SEM",
                            lazy=True)
             cube.axes_manager[-1].name = 'E'
@@ -292,7 +293,9 @@ class Mask:
             cube.axes_manager['E'].scale = 0.01
             cube.axes_manager['E'].offset = -0.97
             self.Elements = {}
-            self.data_cube = np.zeros(np.zeros(cube.axes_manager.shape))
+            self.data_cube = np.zeros((cube.axes_manager.shape[1],
+                                       cube.axes_manager.shape[0],
+                                       self.table.shape[0]))
 
             for element in range(self.table.shape[0]):
                 self.Elements[element] = self.table.iloc[element]['Element']
@@ -325,7 +328,7 @@ class Mask:
         else:
             raise Exception(f"{self.prefix} invalid data type. "
                             f"Valid data types are: "
-                            f"png, .bmp, .tif, .txt or .rpl ")
+                            f".png, .bmp, .tif, .txt or .rpl ")
 
     def mineralcube_creation(self):
         """
@@ -454,7 +457,7 @@ class Mask:
         plt.grid()
         plt.show()
 
-    def save_mask(self, indice: str):
+    def save_mask(self, indice: str, raw: bool = False):
         """
         Save the mineral mask wanted as a .tif file.
         Input is the index of the mineral in the 3D array (cube).
@@ -465,12 +468,22 @@ class Mask:
             Name of the wanted element (eg: 'Fe')
 
         """
-        # Conversion of given string indices to integer indice of the cube
         indice = list(self.Minerals.values()).index(str(indice))
-        plt.imshow(self.mineral_cube[:, :, indice])
-        plt.title(self.Minerals[indice])
-        plt.savefig('Mask_' + self.Minerals[indice] + '.tif')
-        plt.close()
+        if not raw:
+            # Conversion of given string indices to integer indice of the cube
+            plt.imshow(self.mineral_cube[:, :, indice])
+            plt.title(self.Minerals[indice])
+            plt.savefig('Mask_' + self.Minerals[indice] + '.tif')
+            plt.close()
+        else:
+            test_array = (
+                self.mineral_cube[
+                    :,
+                    :,
+                    indice] * 255).astype(
+                np.uint8)
+            image = Image.fromarray(test_array)
+            image.save('Mask_' + self.Minerals[indice] + '.tif')
 
     def get_hist(self, indice: str):
         """
@@ -538,16 +551,13 @@ class Mask:
                 0].shape[0] / np.sum(np.isfinite(array)) * 100
         return array
 
-    def plot_mineral_mask(self):
+    def _create_mineral_mask_and_prop(self):
         """
-        For mineralogy purposes, valid only if all masks are minerals
-        Plot all the mask onto one picture in order to visualize
-        the classification. Each pixel correspond to only one mineral
-        at the time, if not, it is classified as "mixed".
-
+        Create a 2D array that associate each pixel to a mask
+        by assigning a value to each pixel. It also creates a
+        dictionnary containing the relative proportion of a value
+        compared to others.
         """
-        fig = plt.figure()
-
         # Creation of proportion dictionnary
         proportion = {}
 
@@ -563,11 +573,22 @@ class Mask:
                 np.nansum(self.mineral_cube, axis=2) == 1)] = indice
         array[np.where(np.nansum(self.mineral_cube, axis=2) > 1)
               ] = len(self.Minerals) + 1
-
-        # Loop over the mask to calculate proportion of each
         for indice in range(len(self.Minerals)):
             proportion[indice] = np.where(array == indice)[
                 0].shape[0] / np.sum(np.isfinite(array)) * 100
+        return array, proportion
+
+    def plot_mineral_mask(self):
+        """
+        For mineralogy purposes, valid only if all masks are minerals
+        Plot all the mask onto one picture in order to visualize
+        the classification. Each pixel correspond to only one mineral
+        at the time, if not, it is classified as "mixed".
+
+        """
+        fig = plt.figure()
+
+        array, proportion = self._create_mineral_mask_and_prop()
 
         # First plot to generate random colors
         im = plt.imshow(array, cmap='Paired')
@@ -747,23 +768,61 @@ class Mask:
 
         """
         # Conversion of given string indices to integer indice of the cube
-        mineral = list(self.Minerals.values()).index(str(mineral))
-        cube = hs.load(self.prefix[:-1] + ".rpl",
-                       signal_type="EDS_SEM",
-                       lazy=True)
-        array = np.asarray(cube)
-        array[np.isfinite(self.mineral_cube[:, :, mineral])] = 0
-        cube = hs.signals.Signal1D(array)
-        cube.save(self.prefix[:-1] + '_mask_removed_' +
-                  self.Minerals[mineral] + ".rpl",
-                  encoding='utf8')
-        f = open(self.prefix[:-1] + ".rpl", "r")
-        output = open(self.prefix[:-1] + '_mask_removed_' +
+        if mineral == 'mixed':
+            a = self.create_mineral_mask()[0]
+            mixed = np.where(a < np.nanmax(a), np.nan, a)
+            cube = hs.load(self.prefix[:-1] + ".rpl",
+                           signal_type="EDS_SEM",
+                           lazy=True)
+            array = np.asarray(cube)
+            array[np.isfinite(mixed)] = 0
+            cube = hs.signals.Signal1D(array)
+            cube.save(self.prefix[:-1] + '_mask_removed_mixed' + ".rpl",
+                      encoding='utf8')
+            f = open(self.prefix[:-1] + ".rpl", "r")
+            output = open(self.prefix[:-1] + '_mask_removed_mixed' + ".rpl",
+                          'w')
+            output.write(f.read())
+            f.close()
+            output.close()
+
+        elif mineral == 'not indexed':
+            a = self.create_mineral_mask()[0]
+            nan = np.where(np.isnan(a), 0, a)
+            cube = hs.load(self.prefix[:-1] + ".rpl",
+                           signal_type="EDS_SEM",
+                           lazy=True)
+            array = np.asarray(cube)
+            array[np.isfinite(nan)] = 0
+            cube = hs.signals.Signal1D(array)
+            cube.save(self.prefix[:-1] + '_mask_removed_nan' +
+                      ".rpl",
+                      encoding='utf8')
+            f = open(self.prefix[:-1] + ".rpl", "r")
+            output = open(self.prefix[:-1] + '_mask_removed_nan' +
+                          + ".rpl",
+                          'w')
+            output.write(f.read())
+            f.close()
+            output.close()
+        else:
+            mineral = list(self.Minerals.values()).index(str(mineral))
+            cube = hs.load(self.prefix[:-1] + ".rpl",
+                           signal_type="EDS_SEM",
+                           lazy=True)
+            array = np.asarray(cube)
+            array[np.isfinite(self.mineral_cube[:, :, mineral])] = 0
+            cube = hs.signals.Signal1D(array)
+            cube.save(self.prefix[:-1] + '_mask_removed_' +
                       self.Minerals[mineral] + ".rpl",
-                      'w')
-        output.write(f.read())
-        f.close()
-        output.close()
+                      encoding='utf8')
+            f = open(self.prefix[:-1] + ".rpl", "r")
+            output = open(self.prefix[:-1] + '_mask_removed_' +
+                          self.Minerals[mineral] + ".rpl",
+                          'w')
+            output.write(f.read())
+            f.close()
+            output.close()
 
     def get_biplot(self, indicex: str, indicey: str):
         """
@@ -847,77 +906,17 @@ class Mask:
 
         plt.xlim(0, np.max(Valuesx))
         plt.ylim(0, np.max(Valuesy))
-        plt.xlabel(str(self.Elements[indicex]))
-        plt.ylabel(str(self.Elements[indicey]))
+
         plt.title(str(self.Elements[indicez]))
         sns.scatterplot(x=df.x,
                         y=df.y,
                         hue=df.z,
                         alpha=0.3,
                         marker="+")
+        plt.xlabel(str(self.Elements[indicex]))
+        plt.ylabel(str(self.Elements[indicey]))
         fig.tight_layout()
         plt.show()
-
-    def get_ternary_plot(self, left: str, right: str, bottom: str):
-        """
-        Plot ternary,plot
-        Input is the indexes of each of the two element in the 3D array
-        Useful function in order to see elemental ratios and some elemental
-        thresholds.
-
-        Parameters
-        ----------
-        indicex : str
-            Name of the wanted element on x axis(eg: 'Fe')
-        indicey : str
-            Name of the wanted element on y axis (eg: 'Pb')
-        indicez : str
-            Name of the wanted element on colorscale (eg: 'Cu')
-
-        """
-        # Conversion of given string indices to integer indices of the cubes
-        indicex = list(self.Elements.values()).index(str(left))
-        indicey = list(self.Elements.values()).index(str(right))
-        indicez = list(self.Elements.values()).index(str(bottom))
-
-        Valuesx = self.data_cube[
-            :, :, indicex][np.isfinite(self.data_cube[:, :, indicex])]
-        Valuesy = self.data_cube[
-            :, :, indicey][np.isfinite(self.data_cube[:, :, indicey])]
-        Valuesz = self.data_cube[
-            :, :, indicez][np.isfinite(self.data_cube[:, :, indicez])]
-
-        data = {'x': Valuesx, 'y': Valuesy, 'z': Valuesz}
-        df = pd.DataFrame(data)
-
-        if len(df) > 100000:
-            print('Number of points limited to 100000')
-            df = df.sample(n=100000)
-            df = df.reset_index().drop(columns=['index'])
-        scale = 100
-        figure, tax = ternary.figure(scale=scale)
-        tax.boundary(linewidth=2.0)
-        tax.gridlines(multiple=5, color="blue")
-
-        fontsize = 12
-        offset = 0.14
-        tax.left_axis_label(str(self.Elements[indicex]),
-                            fontsize=fontsize,
-                            offset=offset)
-        tax.right_axis_label(str(self.Elements[indicey]),
-                             fontsize=fontsize,
-                             offset=offset)
-        tax.bottom_axis_label(str(self.Elements[indicez]),
-                              fontsize=fontsize,
-                              offset=offset)
-
-        # Plot a few different styles with a legend
-        points = df.to_numpy()
-        tax.scatter(points, s=5, marker='s', color='blue')
-        tax.ticks(axis='lbr', linewidth=1, multiple=5)
-        tax.get_axes().axis('off')
-
-        tax.show()
 
     def save_mask_spectrum(self, mask: str):
         """Save the mean spectrum of a given mask as a txt file
