@@ -30,7 +30,7 @@ setup(
         "Typing :: Typed",
     ],
     python_requires='>=3.6',
-    install_requires=requirements,
+    install_requires=requirements(),
     zip_safe=False,
     project_urls={
         'Example': 'https://github.com/hameye/MARCIA/blob/master/examples/Tutorial.ipynb',
