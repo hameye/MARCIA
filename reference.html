@@ -6,10 +6,12 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
+        <meta name="description" content="TestDesc">
       
       
       
-        <link rel="canonical" href="https://hameye.github.io/MARCIA/examples.html">
+      
+        <link rel="canonical" href="https://hameye.github.io/MARCIA/reference.html">
       
       <link rel="icon" href="assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-7.1.4">
@@ -63,7 +65,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#workflow" class="md-skip">
+        <a href="#code-functions" class="md-skip">
           Skip to content
         </a>
       
@@ -197,6 +199,21 @@
 
   
   
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        Home
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
     
   
   
@@ -213,7 +230,7 @@
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <a href="examples.html" class="md-nav__link md-nav__link--active">
+      <a href="reference.html" class="md-nav__link md-nav__link--active">
         API Reference
       </a>
       
@@ -398,7 +415,7 @@
   
     <li class="md-nav__item">
       <a href="examples/Tutorial.html" class="md-nav__link">
-        Docs
+        Tutoriel
       </a>
     </li>
   
@@ -591,12 +608,12 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/hameye/marcia/edit/master/docs/examples.md" title="Edit this page" class="md-content__button md-icon">
+                  <a href="https://github.com/hameye/marcia/edit/master/docs/reference.md" title="Edit this page" class="md-content__button md-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
                   </a>
                 
                 
-                <h1 id="workflow">Workflow</h1>
+                <h1 id="code-functions">Code Functions<a class="headerlink" href="#code-functions" title="Permanent link">¤</a></h1>
 
 
   <div class="doc doc-object doc-module">
@@ -613,7 +630,7 @@
 
 
 
-<h2 id="marcia.mask-classes">Classes</h2>
+<h2 id="marcia.mask-classes">Classes<a class="headerlink" href="#marcia.mask-classes" title="Permanent link">¤</a></h2>
 
   <div class="doc doc-object doc-class">
 
@@ -624,7 +641,7 @@
 
 
 
-</h3>
+<a class="headerlink" href="#marcia.mask.Mask" title="Permanent link">¤</a></h3>
 
     <div class="doc doc-contents ">
 
@@ -690,7 +707,7 @@ for the color querries.</p>
 
 
 
-<h4 id="marcia.mask.Mask-methods">Methods</h4>
+<h4 id="marcia.mask.Mask-methods">Methods<a class="headerlink" href="#marcia.mask.Mask-methods" title="Permanent link">¤</a></h4>
 
   <div class="doc doc-object doc-method">
 
@@ -700,7 +717,7 @@ for the color querries.</p>
 <code class="highlight language-python"><span class="n">create_mineral_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></code>
 
 
-</h5>
+<a class="headerlink" href="#marcia.mask.Mask.create_mineral_mask" title="Permanent link">¤</a></h5>
 
     <div class="doc doc-contents ">
 
@@ -753,7 +770,7 @@ compared to others.</p>
 <code class="highlight language-python"><span class="n">cube_masking_keep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mineral</span><span class="p">)</span></code>
 
 
-</h5>
+<a class="headerlink" href="#marcia.mask.Mask.cube_masking_keep" title="Permanent link">¤</a></h5>
 
     <div class="doc doc-contents ">
 
@@ -824,7 +841,7 @@ in the wanted mask.</p>
 <code class="highlight language-python"><span class="n">cube_masking_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mineral</span><span class="p">)</span></code>
 
 
-</h5>
+<a class="headerlink" href="#marcia.mask.Mask.cube_masking_remove" title="Permanent link">¤</a></h5>
 
     <div class="doc doc-contents ">
 
@@ -933,7 +950,7 @@ data without the mask not wanted.</p>
 <code class="highlight language-python"><span class="n">datacube_creation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></code>
 
 
-</h5>
+<a class="headerlink" href="#marcia.mask.Mask.datacube_creation" title="Permanent link">¤</a></h5>
 
     <div class="doc doc-contents ">
 
@@ -945,7 +962,7 @@ according to the spreasheet ranking.
 If the normalization is asked or if the elemental map is an image,
 the data in the array are between 0 and 100.
 If there is a scalebar, the corresponding pixels are non assigned.</p>
-<h6 id="marcia.mask.Mask.datacube_creation--three-types-of-elemental-files-are-accepted">Three types of elemental files are accepted</h6>
+<h6 id="marcia.mask.Mask.datacube_creation--three-types-of-elemental-files-are-accepted">Three types of elemental files are accepted<a class="headerlink" href="#marcia.mask.Mask.datacube_creation--three-types-of-elemental-files-are-accepted" title="Permanent link">¤</a></h6>
 <ul>
 <li>
 <p>Imges (.bmp of .tif), which are RGB files : each pixel contains 3
@@ -1185,7 +1202,7 @@ of the element in the 3D array created.</p>
 <code class="highlight language-python"><span class="n">get_biplot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indicex</span><span class="p">,</span> <span class="n">indicey</span><span class="p">)</span></code>
 
 
-</h5>
+<a class="headerlink" href="#marcia.mask.Mask.get_biplot" title="Permanent link">¤</a></h5>
 
     <div class="doc doc-contents ">
 
@@ -1276,7 +1293,7 @@ elemental thresholds.</p>
 <code class="highlight language-python"><span class="n">get_hist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indice</span><span class="p">)</span></code>
 
 
-</h5>
+<a class="headerlink" href="#marcia.mask.Mask.get_hist" title="Permanent link">¤</a></h5>
 
     <div class="doc doc-contents ">
 
@@ -1358,7 +1375,7 @@ Useful function in order to set the threshold in the spreadsheet.</p>
 <code class="highlight language-python"><span class="n">get_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indice</span><span class="p">)</span></code>
 
 
-</h5>
+<a class="headerlink" href="#marcia.mask.Mask.get_mask" title="Permanent link">¤</a></h5>
 
     <div class="doc doc-contents ">
 
@@ -1418,7 +1435,7 @@ Input is the index of the mineral in the 3D array (cube).</p>
 <code class="highlight language-python"><span class="n">get_masked_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="n">mineral</span><span class="p">)</span></code>
 
 
-</h5>
+<a class="headerlink" href="#marcia.mask.Mask.get_masked_element" title="Permanent link">¤</a></h5>
 
     <div class="doc doc-contents ">
 
@@ -1499,7 +1516,7 @@ associated only in a specific mask.</p>
 <code class="highlight language-python"><span class="n">get_triplot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indicex</span><span class="p">,</span> <span class="n">indicey</span><span class="p">,</span> <span class="n">indicez</span><span class="p">)</span></code>
 
 
-</h5>
+<a class="headerlink" href="#marcia.mask.Mask.get_triplot" title="Permanent link">¤</a></h5>
 
     <div class="doc doc-contents ">
 
@@ -1603,7 +1620,7 @@ thresholds.</p>
 <code class="highlight language-python"><span class="n">load_table</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></code>
 
 
-</h5>
+<a class="headerlink" href="#marcia.mask.Mask.load_table" title="Permanent link">¤</a></h5>
 
     <div class="doc doc-contents ">
 
@@ -1662,7 +1679,7 @@ the classification. Colors are also specified in the spreadsheet.</p>
 <code class="highlight language-python"><span class="n">mineralcube_creation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></code>
 
 
-</h5>
+<a class="headerlink" href="#marcia.mask.Mask.mineralcube_creation" title="Permanent link">¤</a></h5>
 
     <div class="doc doc-contents ">
 
@@ -1808,7 +1825,7 @@ of the minerals in the 3D array created.</p>
 <code class="highlight language-python"><span class="n">plot_mineral_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></code>
 
 
-</h5>
+<a class="headerlink" href="#marcia.mask.Mask.plot_mineral_mask" title="Permanent link">¤</a></h5>
 
     <div class="doc doc-contents ">
 
@@ -1947,7 +1964,7 @@ at the time, if not, it is classified as "mixed".</p>
 <code class="highlight language-python"><span class="n">save_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indice</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 
-</h5>
+<a class="headerlink" href="#marcia.mask.Mask.save_mask" title="Permanent link">¤</a></h5>
 
     <div class="doc doc-contents ">
 
@@ -2016,7 +2033,7 @@ Input is the index of the mineral in the 3D array (cube).</p>
 <code class="highlight language-python"><span class="n">save_mask_spectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span></code>
 
 
-</h5>
+<a class="headerlink" href="#marcia.mask.Mask.save_mask_spectrum" title="Permanent link">¤</a></h5>
 
     <div class="doc doc-contents ">
 
@@ -2113,6 +2130,20 @@ Second column is counts</p>
   
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
+        <a href="index.html" class="md-footer__link md-footer__link--prev" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Home
+            </div>
+          </div>
+        </a>
+      
       
         <a href="examples/Tutorial.html" class="md-footer__link md-footer__link--next" rel="next">
           <div class="md-footer__title">
@@ -2120,7 +2151,7 @@ Second column is counts</p>
               <span class="md-footer__direction">
                 Next
               </span>
-              Docs
+              Tutoriel
             </div>
           </div>
           <div class="md-footer__button md-icon">

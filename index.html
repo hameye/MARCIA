@@ -6,6 +6,8 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
+        <meta name="description" content="TestDesc">
+      
       
       
       
@@ -16,7 +18,7 @@
     
     
       
-        <title>Welcome to MkDocs - MARCIA Documentation</title>
+        <title>Home - MARCIA Documentation</title>
       
     
     
@@ -63,7 +65,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#welcome-to-mkdocs" class="md-skip">
+        <a href="#marcia-masking-spectroscopic-datacube" class="md-skip">
           Skip to content
         </a>
       
@@ -93,7 +95,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Welcome to MkDocs
+              Home
             
           </span>
         </div>
@@ -197,9 +199,85 @@
 
   
   
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Home
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="index.html" class="md-nav__link md-nav__link--active">
+        Home
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#manual-classifier-for-xrf-and-edssem-hypercubes" class="md-nav__link">
+    Manual classifier for µXRF and EDS/SEM hypercubes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    Install
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#use-in-python" class="md-nav__link">
+    Use in python
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gallery" class="md-nav__link">
+    Gallery
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
   
     <li class="md-nav__item">
-      <a href="examples.html" class="md-nav__link">
+      <a href="reference.html" class="md-nav__link">
         API Reference
       </a>
     </li>
@@ -215,7 +293,7 @@
   
     <li class="md-nav__item">
       <a href="examples/Tutorial.html" class="md-nav__link">
-        Docs
+        Tutoriel
       </a>
     </li>
   
@@ -247,15 +325,29 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#commands" class="md-nav__link">
-    Commands
+  <a href="#manual-classifier-for-xrf-and-edssem-hypercubes" class="md-nav__link">
+    Manual classifier for µXRF and EDS/SEM hypercubes
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#project-layout" class="md-nav__link">
-    Project layout
+  <a href="#install" class="md-nav__link">
+    Install
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#use-in-python" class="md-nav__link">
+    Use in python
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gallery" class="md-nav__link">
+    Gallery
   </a>
   
 </li>
@@ -277,21 +369,23 @@
                   </a>
                 
                 
-                <h1 id="welcome-to-mkdocs">Welcome to MkDocs</h1>
-<p>For full documentation visit <a href="https://www.mkdocs.org">mkdocs.org</a>.</p>
-<h2 id="commands">Commands</h2>
+                <h1 id="marcia-masking-spectroscopic-datacube">MARCIA - MAsking spectRosCopIc dAtacube<a class="headerlink" href="#marcia-masking-spectroscopic-datacube" title="Permanent link">¤</a></h1>
+<p><a href="https://doi.org/10.5281/zenodo.3929745"><img alt="DOI" src="https://zenodo.org/badge/DOI/10.5281/zenodo.3929745.svg" /></a>
+<a href="https://pypi.org/project/MARCIA/"><img alt="PyPI" src="https://img.shields.io/badge/MARCIA-v0.1.1-blue.svg?maxAge=2592000" /></a></p>
+<h2 id="manual-classifier-for-xrf-and-edssem-hypercubes">Manual classifier for µXRF and EDS/SEM hypercubes<a class="headerlink" href="#manual-classifier-for-xrf-and-edssem-hypercubes" title="Permanent link">¤</a></h2>
 <ul>
-<li><code>mkdocs new [dir-name]</code> - Create a new project.</li>
-<li><code>mkdocs serve</code> - Start the live-reloading docs server.</li>
-<li><code>mkdocs build</code> - Build the documentation site.</li>
-<li><code>mkdocs -h</code> - Print help message and exit.</li>
+<li>Classification is achieved by defining masks that are linear combination of elemental intensities in spectra.</li>
+<li>Classes can then be extracted and read with hyperspy or PyMca or Esprit</li>
 </ul>
-<h2 id="project-layout">Project layout</h2>
-<pre><code>mkdocs.yml    # The configuration file.
-docs/
-    index.md  # The documentation homepage.
-    ...       # Other markdown pages, images and other files.
-</code></pre>
+<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">¤</a></h2>
+<p>Just do
+<div class="highlight"><pre><span></span><code>pip install marcia
+</code></pre></div></p>
+<h2 id="use-in-python">Use in python<a class="headerlink" href="#use-in-python" title="Permanent link">¤</a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">marcia.mask</span> <span class="kn">import</span> <span class="n">Mask</span>
+</code></pre></div>
+<h2 id="gallery">Gallery<a class="headerlink" href="#gallery" title="Permanent link">¤</a></h2>
+<p><img alt="Example" src="https://github.com/hameye/MARCIA/blob/master/gallery.png" /></p>
                 
               
               
@@ -307,6 +401,25 @@ docs/
       
         
 <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+      
+        <a href="reference.html" class="md-footer__link md-footer__link--next" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              API Reference
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
