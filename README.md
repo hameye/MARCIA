@@ -1,6 +1,6 @@
 
 # MARCIA - MAsking spectRosCopIc dAtacube
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3929745.svg)](https://doi.org/10.5281/zenodo.3929745)
+[![DOI](https://zenodo.org/badge/263880541.svg)](https://zenodo.org/badge/latestdoi/263880541)
 [![PyPI](https://img.shields.io/badge/MARCIA-v0.1.3-blue.svg?maxAge=2592000)](https://pypi.org/project/MARCIA/)
 
 ## Manual classifier for µXRF and EDS/SEM hypercubes
