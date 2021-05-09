@@ -1,0 +1,50 @@
+site_name: MARCIA Documentation
+site_url: https://hameye.github.io/MARCIA/
+site_description: TestDesc
+repo_url: https://github.com/hameye/marcia
+edit_uri: ''  #disables edit button
+
+
+repo_name: hameye/marcia
+use_directory_urls: false
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Home: index.md
+  - Tutoriel: examples/Tutorial.ipynb
+  - Documentation: reference.md
+
+markdown_extensions:
+- admonition
+# - pymdownx.emoji
+# - pymdownx.magiclink
+- pymdownx.snippets:
+    check_paths: true
+# - pymdownx.superfences
+# - pymdownx.tabbed
+# - pymdownx.tasklist
+# - toc:
+#     permalink: "¤"
+
+plugins:
+  - search
+  - autolinks
+  - mkdocs-jupyter:
+      include_source: False
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          rendering:
+            show_root_heading: false
+            show_source: true
+            show_category_heading: true
+          selection:
+            filters:
+              - "!^_"  # exlude all members starting with _
+      watch:
+        - marcia

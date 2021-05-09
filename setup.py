@@ -11,7 +11,7 @@ def requirements():
 
 setup(
     name='MARCIA',
-    version='0.1.3',
+    version='0.2.0',
     description='Manual hyperspectral data classifier',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -26,10 +26,10 @@ setup(
     classifiers=[
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "Typing :: Typed",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     install_requires=requirements(),
     zip_safe=False,
     project_urls={
