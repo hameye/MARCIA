@@ -1,4 +1,4 @@
-from setuptools import setup, find_namespace_packages
+from setuptools import setup, find_packages
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
@@ -10,7 +10,7 @@ def requirements():
 
 
 setup(
-    name='MARCIA',
+    name='marcia',
     version='0.2.0',
     description='Manual hyperspectral data classifier',
     long_description=long_description,
@@ -19,10 +19,8 @@ setup(
     author='Hadrien Meyer',
     author_email='meyerhadrien96@gmail.com',
     license='GPL v3',
-    packages=find_namespace_packages(
-        exclude=[
-            'doc',
-            'doc.*']),
+    package_dir={"": "src"},
+    packages=find_packages(where="src"),
     classifiers=[
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
