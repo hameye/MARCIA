@@ -113,10 +113,10 @@ def mineralcube_creation(cube: DataCube, mask: Mask):
         mineral_cube[:, :, element] = mask_i_str / np.nanmax(mask_i_str)
 
     # Dividing by sum of all minerals for each in order to detail misclassified
-    mineral_cube = mineral_cube / np.nansum(mineral_cube,axis=2,keepdims=mineral_cube.shape[2])
+    mineral_cube = mineral_cube
 
     # Create mineralcube object
-    datacube = MineralCube(mineral_cube,Minerals,cube.prefix,cube.suffix)
+    datacube = MineralCube(mineral_cube,Minerals,cube.prefix,cube.suffix, True, mask.colors)
 
     return datacube
 

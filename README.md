@@ -16,8 +16,8 @@ pip install marcia
 
 ## Use in python
 ```python
-from marcia.mask import Mask
+import marcia as mc
 ```
 
 ## Gallery
-![Example](https://github.com/hameye/MARCIA/blob/master/gallery.png)
+![Example](https://user-images.githubusercontent.com/57682091/117534327-310f5680-aff1-11eb-92ad-17d64afac14b.png)

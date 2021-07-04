@@ -1,13 +1,11 @@
 from typing import List
-from PIL.Image import new
 
-import numpy as np
 import pandas as pd
 
 
 
 class Mask:
-    def __init__(self, table: pd.DataFrame,colors:List, filename: str):
+    def __init__(self, table: pd.DataFrame, colors:List, filename: str):
         self._table = table
         self._colors = colors
         self._filename = filename
@@ -22,7 +20,7 @@ class Mask:
 
     @property
     def masks(self):
-        return self.table.to_list()
+        return self.table.columns.to_list()
 
     @property
     def filename(self):
@@ -41,3 +39,9 @@ class Mask:
     def colors(self) -> List:
         # Check if table has specific colors for the masks
         return self._colors
+
+    def set_value(self, element:str, mask: str, value):
+        self._table[mask][element] = value
+
+    def get_value(self, element: str, mask: str):
+        return self._table[mask][element]

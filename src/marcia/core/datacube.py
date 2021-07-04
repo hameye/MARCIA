@@ -20,8 +20,7 @@ class DataCube:
     def prefix(self):
         return self._prefix
 
-    property
-
+    @property
     def suffix(self):
         return self._suffix
 
@@ -35,9 +34,11 @@ class MultiCube(DataCube):
                  elements: Dict,
                  prefix: str,
                  suffix: str,
-                 normalization: bool = True):
+                 normalization: bool = True
+                 ):
         self._elements = elements
         self._normalization = normalization
+
         super().__init__(data_cube, prefix, suffix)
 
     @property
@@ -50,11 +51,11 @@ class MultiCube(DataCube):
 
 
 class MineralCube(MultiCube):
-    def __init__(self, data_cube, elements, prefix, suffix, normalization=True):
+    def __init__(self, data_cube, elements, prefix, suffix, normalization=True, colors=None):
+        self._colors = colors
         super().__init__(data_cube, elements, prefix, suffix, normalization)
 
     def map(self):
-
         """
         Create a 2D array that associate each pixel to a mask
         by assigning a value to each pixel. It also creates a
@@ -80,6 +81,7 @@ class MineralCube(MultiCube):
             proportion[indice] = np.where(array == indice)[
                 0].shape[0] / np.sum(np.isfinite(array)) * 100
         return array, proportion
+
 
 class HyperCube(DataCube):
     def __init__(self, data_cube, prefix, suffix):
