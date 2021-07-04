@@ -1,5 +1,3 @@
-# Code Documentation
-
-::: marcia
+::: marcia.io.mask
     rendering:
         show_root_toc_entry: False

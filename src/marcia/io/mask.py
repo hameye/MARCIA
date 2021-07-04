@@ -3,12 +3,21 @@ import numpy as np
 from ..core.mask import Mask
 
 
-def load_mask(filename):
+def load_mask(filename: str) -> Mask:
     """
-    Load the spreadsheet into the programm.
+    Load table file into the programm.
     Verification if information of colors are required for
     the classification. Colors are also specified in the spreadsheet.
 
+    Args:
+        filename: Name of the table file.
+    
+    Raises:
+        TypeError: If table file format is not 
+            supported by the program.
+    
+    Returns:
+        Marcia Mask Object.
     """
     # Check if table is csv/txt or xlsx
     if filename.split('.')[-1] in ('csv', 'txt'):
@@ -18,28 +27,22 @@ def load_mask(filename):
         table = pd.read_excel(filename, index_col='Element')
 
     else:
-        raise Exception(
+        raise TypeError(
             f"{filename.split('.')[-1]} "
             f"invalid Table format."
             f"Valid data types are: .csv, .txt, or .xls ")
-    
+
     colors = []
     if table.index.str.contains('ouleur|olor').any():
         indice = np.where(
             table.index.str.contains('ouleur|olor'))[0][0]
         color_name = table.index[indice]
 
-        # # Creation of dictionnary containing the colors
-
-        # for coul in range(table.iloc[indice].shape[0]):
-        #     if isinstance(table.iloc[indice][coul], str):
-        #         colors[coul] = table.iloc[indice][coul]
+        # Creation of dictionnary containing the colors
         table.loc[color_name] = table.loc[color_name].replace({np.nan: None})
 
         colors = table.loc[color_name].to_list()
-        
-        table = table.drop(labels=color_name)
-        
-    
 
-    return Mask(table,colors,filename)
+        table = table.drop(labels=color_name)
+
+    return Mask(table, colors, filename)

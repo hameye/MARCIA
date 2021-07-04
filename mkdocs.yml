@@ -10,31 +10,61 @@ use_directory_urls: false
 
 theme:
   name: material
+  palette: 
+    scheme: mca
   icon:
     repo: fontawesome/brands/github
+    language: en
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.instant
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
 
 nav:
   - Home: index.md
-  # - Tutoriel: examples/Tutorial.ipynb
-  - Documentation: reference.md
+  - Installation: 
+    - Python Installation: python_install.md
+    - MARCIa Installation: marcia_install.md
+  - User Guides: 
+    - Complete Example: examples/Tutorial.ipynb
+  - Code Documentation:
+    - Objects: 
+      - Datacube: code_reference/datacube.md
+      - Mask: code_reference/mask.md
+    - Fitting:
+      - Manual Fitting: code_reference/manual_fit.md
+    - IO:
+      - Datacube: code_reference/data_io.md
+      - Mask: code_reference/mask_io.md
+    - Plotting: 
+      - Datacube: code_reference/plotting.md
+      
+
 
 markdown_extensions:
 - admonition
-# - pymdownx.emoji
-# - pymdownx.magiclink
+- pymdownx.highlight
+- pymdownx.superfences
+- pymdownx.tabbed
+- pymdownx.emoji
+- pymdownx.magiclink
+- pymdownx.inlinehilite
 - pymdownx.snippets:
     check_paths: true
-# - pymdownx.superfences
-# - pymdownx.tabbed
+
 # - pymdownx.tasklist
-# - toc:
-#     permalink: "¤"
+- toc:
+    permalink: "¤"
 
 plugins:
   - search
   - autolinks
   - mkdocs-jupyter:
-      include_source: False
+      include_source: True
+      ignore_h1_titles: True
   - mkdocstrings:
       default_handler: python
       handlers:
@@ -48,3 +78,9 @@ plugins:
               - "!^_"  # exlude all members starting with _
       watch:
         - src/marcia
+
+extra_css:
+  - stylesheets/extra.css
+  - css/style.css
+
+copyright: Copyright &copy; 2020 - 2021 Hadrien Meyer

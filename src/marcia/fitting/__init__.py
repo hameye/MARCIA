@@ -1,1 +1,1 @@
-from .manualt_fit import *
+from .manual_fit import *

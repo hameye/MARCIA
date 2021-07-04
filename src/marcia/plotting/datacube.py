@@ -11,17 +11,19 @@ from ..core.datacube import DataCube, MineralCube, MultiCube
 mpl.rcParams['image.cmap'] = 'cividis'
 
 
-def hist_in_mask(data_cube, mineral_cube, element: str, mineral: str):
+def hist_in_mask(data_cube: DataCube,
+                 mineral_cube: MineralCube,
+                 element: str,
+                 mineral: str):
     """
-    Plot the elemental map and the histogram
-    associated only in a specific mask.
+    Plot elemental map and histogram
+    associated only for a specific element in a mineralcube.
 
-    Parameters
-    ----------
-    element : str
-        Name of the wanted element (eg: 'Fe')
-    mineral : str
-        Name of the wanted mask (eg: 'Galene')
+    Args:
+        data_cube: DataCube to plot.
+        mineral_cube: MineralCube to check if element in mineral.
+        element:  Name of the wanted element (eg: 'Fe').
+        mineral:  Name of the wanted mask (eg: 'Galene').
 
     """
     # Conversion of given string indices to integer indices of the cubes
@@ -49,24 +51,31 @@ def hist_in_mask(data_cube, mineral_cube, element: str, mineral: str):
     plt.show()
 
 
-def hist(datacube: DataCube, indice):
+def hist(datacube: DataCube,
+         indice: str):
+    """Plot elemental map and histogram of a specific element.
+
+    Args:
+        datacube: Marcia DataCube Object.
+        indice: Element to plot.
+    """
     if type(datacube) == MultiCube:
         datacube_hist(datacube, indice)
     if type(datacube) == MineralCube:
         mineralcube_hist(datacube, indice)
 
 
-def datacube_hist(datacube: DataCube, indice: str):
+def datacube_hist(datacube: DataCube,
+                  indice: str):
     """
     Plot the elemental map on the left side an
     the corresponding hitogram of intensity on the right side
     Input is the index of the element in the 3D array
     Useful function in order to set the threshold in the spreadsheet.
 
-    Parameters
-    ----------
-    indice : str
-        Name of the wanted element (eg: 'Fe')
+    Args:
+        datacube: Marcia DataCube Object.
+        indice: Element to plot.
 
     """
     # Conversion of given string indices to integer indice of the cube
@@ -96,17 +105,18 @@ def datacube_hist(datacube: DataCube, indice: str):
     plt.show()
 
 
-def mineralcube_hist(mineral_cube: DataCube, indice: str):
+def mineralcube_hist(mineral_cube: MineralCube,
+                     indice: str):
     """
     Plot the elemental map on the left side an
-    the corresponding hitogram of intensity on the right side
+    the corresponding hitogram of probability to 
+    be in the mineral on the right side.
     Input is the index of the element in the 3D array
     Useful function in order to set the threshold in the spreadsheet.
 
-    Parameters
-    ----------
-    indice : str
-        Name of the wanted element (eg: 'Fe')
+    Args:
+        mineral_cube: Marcia DataCube Object.
+        indice: Element to plot.
 
     """
     # Conversion of given string indices to integer indice of the cube
@@ -117,8 +127,7 @@ def mineralcube_hist(mineral_cube: DataCube, indice: str):
     data = mineral_cube.datacube / np.nansum(
         mineral_cube.datacube,
         axis=2,
-        keepdims=mineral_cube.datacube.shape[2]
-    )
+        keepdims=mineral_cube.datacube.shape[2])
 
     # Keep only finite values
     finite_data = data[:, :, indice][np.isfinite(data[:, :, indice])]
@@ -144,15 +153,15 @@ def mineralcube_hist(mineral_cube: DataCube, indice: str):
     plt.show()
 
 
-def plot(datacube: DataCube, indice: str):
+def plot(datacube: DataCube,
+         indice: str):
     """
     Plot the mineral mask wanted
     Input is the index of the mineral in the 3D array (cube).
 
-    Parameters
-    ----------
-    indice : str
-        Name of the wanted mask (eg: 'Galene')
+    Args:
+        mineral_cube: Marcia DataCube Object.
+        indice: Element to plot.
 
     """
     # Conversion of given string indices to integer indice of the cube
@@ -164,19 +173,19 @@ def plot(datacube: DataCube, indice: str):
     plt.show()
 
 
-def biplot(datacube: DataCube, indicex: str, indicey: str):
+def biplot(datacube: DataCube,
+           indicex: str,
+           indicey: str):
     """
     Plot one element against another one in a scatter plot
     Input is the indexes of each of the two element in the 3D array
     Useful function in order to see elemental ratios and some
     elemental thresholds.
 
-    Parameters
-    ----------
-    indicex : str
-        Name of the wanted element on x axis (eg: 'Fe')
-    indicey : str
-        Name of the wanted element on y axis (eg: 'Pb')
+    Args:
+        datacube: Marcia DataCube Object.
+        indicex: Element to plot on x-axis.
+        indicey: Element to plot on y-axis.
 
     """
     # Conversion of given string indices to integer indices of the cubes
@@ -208,21 +217,21 @@ def biplot(datacube: DataCube, indicex: str, indicey: str):
     plt.show()
 
 
-def triplot(datacube: DataCube, indicex: str, indicey: str, indicez: str):
+def triplot(datacube: DataCube,
+            indicex: str,
+            indicey: str,
+            indicez: str):
     """
     Plot one element against another one in a scatter plot
     Input is the indexes of each of the two element in the 3D array
     Useful function in order to see elemental ratios and some elemental
     thresholds.
 
-    Parameters
-    ----------
-    indicex : str
-        Name of the wanted element on x axis(eg: 'Fe')
-    indicey : str
-        Name of the wanted element on y axis (eg: 'Pb')
-    indicez : str
-        Name of the wanted element on colorscale (eg: 'Cu')
+    Args:
+        datacube: Marcia DataCube Object.
+        indicex: Element to plot on x-axis.
+        indicey: Element to plot on y-axis.
+        indicez: Element to color data with.
 
     """
     # Conversion of given string indices to integer indices of the cubes
@@ -266,6 +275,9 @@ def plot_minerals(datacube: MineralCube):
     Plot all the mask onto one picture in order to visualize
     the classification. Each pixel correspond to only one mineral
     at the time, if not, it is classified as "mixed".
+
+    Args:
+        datacube: Marcia MineralCube Object.
 
     """
     fig = plt.figure()
@@ -342,6 +354,6 @@ def plot_minerals(datacube: MineralCube):
                loc=2,
                borderaxespad=0.)
     plt.grid(True)
-    plt.title(f"Mineralogical classification - {datacube.prefix[:-1]}")
+    plt.title(f"Mineralogical classification - {datacube.prefix}")
     plt.tight_layout()
     plt.show()

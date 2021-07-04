@@ -4,31 +4,34 @@ from ..core.datacube import DataCube, MineralCube
 from ..core.mask import Mask
 
 
-def manual_fitting(cube: DataCube, mask: Mask):
-    pass
-
-
-def mineralcube_creation(cube: DataCube, mask: Mask):
+def mineralcube_creation(cube: DataCube,
+                         mask: Mask) -> MineralCube:
     """
     Create a 3D numpy array (X and Y are the dimensions
     of the sample and Z dimension is the number of minerals wanted for
     the classification).
-    The minerals are defined by the columns in the spreadsheet. The 2D
-    array create per mineral depends on the threshold specified in the
-    spreadsheet.
+    Minerals are defined by the columns in the mask table. The 2D
+    array created per mineral depends on the threshold specified in the
+    mask table.
     If one value is given, it corresponds to the minimum threshold to
     be in the mineral.
     If two values separated by a dash, it corresponds to the range of
-    values for this element to be in the mineral.
-    Given values are outside the range.
+    values for this element to be in the mineral (threshold are
+    exclusive).
 
     Each mineral array is binary with 1 where the pixel is in the
-    mineral and NaN (non assigned) where the pixel is not in the mineral.
+    mineral and NaN (not assigned value) where the pixel is not in the mineral.
 
     The function also creates a dictionnary containing the Z position
     of the minerals in the 3D array created.
 
-    2 class files created in that function.
+    Args:
+        cube: Marcia DataCube Object to be classify.
+        mask: Marcia Mask Object containing thresholds
+            for manual classification.
+    
+    Returns:
+        Marcia Mineralube Object containing binary values.
 
     """
     # Creation of mineral/mask names dictionnary
@@ -116,7 +119,11 @@ def mineralcube_creation(cube: DataCube, mask: Mask):
     mineral_cube = mineral_cube
 
     # Create mineralcube object
-    datacube = MineralCube(mineral_cube,Minerals,cube.prefix,cube.suffix, True, mask.colors)
+    datacube = MineralCube(mineral_cube,
+                           Minerals,
+                           cube.prefix,
+                           cube.suffix,
+                           True,
+                           mask.colors)
 
     return datacube
-

@@ -11,19 +11,23 @@ from PIL import Image
 from ..core.datacube import DataCube, HyperCube, MultiCube
 
 
-def load(prefix: str, suffix: str, normalization: bool = True, element_list: List[str] = None) -> DataCube:
+def load(prefix: str,
+         suffix: str,
+         normalization: bool = True,
+         element_list: List[str] = None):
     """
     Create a 3D array (X and Y are the dimensions of the
     sample and Z dimension is the number of elements/emission lines taken
-    into account for the classification)
-    It stacks the information contained in the elemental files given ranked
+    into account for the classification).
+
+    Stack the information contained in the elemental files given ranked
     according to the spreasheet ranking.
-    If the normalization is asked or if the elemental map is an image,
-    the data in the array are between 0 and 100.
-    If there is a scalebar, the corresponding pixels are non assigned.
+
+    If normalization is asked or if the elemental map is an image file,
+    data in the array are between 0 and 100.
 
     Three types of elemental files are accepted
-    -------------------------------------------
+
     - Imges (.bmp of .tif), which are RGB files : each pixel contains 3
     values between 0 and 255. The rgb is put into greyscale calculated
     by the norm 2.
@@ -43,6 +47,18 @@ def load(prefix: str, suffix: str, normalization: bool = True, element_list: Lis
 
     2 class files created in that function.
 
+    Args:
+        prefix: Common name between files.
+        suffix: Extension name of the files.
+        normalization: If data are normalized
+            between 0 and 100.
+        element_list: User can specify list 
+            elements to be taken, or let the program
+            finds all data in corresponding to given
+            prefix name.
+    
+    Raises:
+        TypeError: If given extension is not accepted by the program.
     """
     # Extract file list, needed if images
     if element_list is None:
@@ -75,12 +91,28 @@ def load(prefix: str, suffix: str, normalization: bool = True, element_list: Lis
 
     # Raise Exception to provide valide data type
     else:
-        raise Exception(f"{prefix} invalid data type. "
+        raise TypeError(f"{prefix} invalid data type. "
                         f"Valid data types are: "
                         f".png, .jpg, .bmp, .tif, .txt or .rpl ")
 
 
-def load_images(file_list: List[str], prefix: str, suffix: str) -> MultiCube:
+def load_images(file_list: List[str],
+                prefix: str,
+                suffix: str) -> MultiCube:
+    """Images Data loader. 
+    
+    Low-level function for data loading.
+
+    Args:
+        file_list: List of images files to load.
+        prefix: Common name between files.
+        suffix: Extension name of the files.
+
+    Returns:
+        Marcia MultiCube Objects.
+
+        MultiCube means data channels are discrete and not continuous.
+    """
     # Set automatic normalization to True
     normalization = True
 
@@ -90,15 +122,13 @@ def load_images(file_list: List[str], prefix: str, suffix: str) -> MultiCube:
         f'{suffix}', '') for elt in file_list]
 
     # Read the first image to know the dimensions
-    test_image = np.linalg.norm(
-        np.array(Image.open(file_list[0])),
-        axis=2)
+    test_image = np.linalg.norm(np.array(Image.open(file_list[0])),
+                                axis=2)
 
     # Initialize multi-dimensionnal array
-    data_cube = np.zeros(
-        (test_image.shape[0],
-            test_image.shape[1],
-            len(file_list)))
+    data_cube = np.zeros((test_image.shape[0],
+                          test_image.shape[1],
+                          len(file_list)))
 
     # Loop over elements in the table
     for element in range(len(file_list)):
@@ -109,16 +139,33 @@ def load_images(file_list: List[str], prefix: str, suffix: str) -> MultiCube:
             np.array(Image.open(file_list[element])),
             axis=2)
 
-        data_cube[:, :, element] = data_cube[
-            :, :, element] / np.nanmax(data_cube[:, :, element]) * 100
+        data_cube[:, :, element] = (data_cube[:, :, element]
+                                    / np.nanmax(data_cube[:, :, element])
+                                    * 100)
 
-    return MultiCube(data_cube, elements, prefix, suffix, normalization=True)
+    return MultiCube(data_cube, elements, prefix, suffix, normalization=normalization)
 
 
 def load_textfile(file_list: List[str],
                   prefix: str,
                   suffix: str,
                   normalization: bool = True) -> MultiCube:
+    """Text Data Loader.
+
+    Low-level function for data loading.
+
+    Args:
+        file_list: List of images files to load.
+        prefix: Common name between files.
+        suffix: Extension name of the files.
+        normalization: If data are normalized
+            between 0 and 100.
+
+    Returns:
+       Marcia MultiCube Objects.
+
+       MultiCube means data channels are discrete and not continuous.
+    """
     # Creation of element names dictionnary
     elements = {}
     element_list = [elt.replace(f'{prefix}_', '').replace(
@@ -129,25 +176,24 @@ def load_textfile(file_list: List[str],
                             delimiter=';')
 
     # Initialize multi-dimensionnal array
-    data_cube = np.zeros(
-        (test_image.shape[0],
-            test_image.shape[1],
-            len(file_list)))
+    data_cube = np.zeros((test_image.shape[0],
+                          test_image.shape[1],
+                          len(file_list)))
 
     # Loop over elements in the table
     for element in range(len(file_list)):
         elements[element] = element_list[element]
 
         # Load of the data count per element
-        data_cube[:, :, element] = np.loadtxt(
-            file_list[element],
-            delimiter=';')
+        data_cube[:, :, element] = np.loadtxt(file_list[element],
+                                              delimiter=';')
 
         # If user wants to see normalized over 100 data
         # This option makes impossible intensity comparison over element
         if normalization:
-            data_cube[:, :, element] = data_cube[
-                :, :, element] / np.nanmax(data_cube[:, :, element]) * 100
+            data_cube[:, :, element] = (data_cube[:, :, element]
+                                        / np.nanmax(data_cube[:, :, element])
+                                        * 100)
 
     return MultiCube(data_cube, elements, prefix, suffix, normalization)
 
@@ -158,6 +204,21 @@ def load_hypermap(prefix: str,
                   units: str = 'keV',
                   scale: float = 0.01,
                   offset: float = - 0.97) -> HyperCube:
+    """Raw HyperCube Data Loader.
+
+    Args:
+        prefix: Name of file.
+        suffix: Extension name of the file.
+        name: Physical measure of channel
+        units: Unit of physical measure. Defaults to 'keV'.
+        scale: Scale realationship betwen channel and physical measure.
+        offset: Scale offset between channel and physcial measure.
+
+    Returns:
+        Marcia HyperCube Object.
+
+        HyperCube means data channels are continuous.
+    """
     cube = hs.load(f'{prefix}{suffix}',
                    signal_type="EDS_SEM",
                    lazy=True)
@@ -169,15 +230,16 @@ def load_hypermap(prefix: str,
     return HyperCube(cube, prefix, suffix)
 
 
-def save(datacube: DataCube, element: str, raw: bool = False):
+def save(datacube: DataCube,
+         element: str,
+         raw: bool = False):
     """
-    Save the mineral mask wanted as a .tif file.
-    Input is the index of the mineral in the 3D array (cube).
+    Save specified element as a .tif image file.
 
-    Parameters
-    ----------
-    indice : str
-        Name of the wanted element (eg: 'Fe')
+    Args:
+        datacube: Marcia DataCube Object.
+        element: Name of the wanted element (eg: 'Fe')
+        raw: If saved image has information background or not.
 
     """
     # Convert element name to index
@@ -194,27 +256,24 @@ def save(datacube: DataCube, element: str, raw: bool = False):
 
     # Else, return only image withou background
     else:
-        test_array = (
-            datacube.datacube[
-                :,
-                :,
-                index] * 255
-        ).astype(
-            np.uint8
-        )
+        test_array = (datacube.datacube[:, :, index] * 255).astype(
+            np.uint8)
         image = Image.fromarray(test_array)
         image.save(f"mask_{datacube.elements[index]}.tif")
 
 
-def save_cube_inside_mask(data_cube, mineral: str):
+def save_cube_inside_mask(data_cube: DataCube,
+                          mineral: str):
     """
-    Recreates a raw datacube containing data only
-    in the wanted mask.
+    Recreates raw datacube containing data only
+    in the wanted element.
 
-    Parameters
-    ----------
-    mineral : str
-        Name of the wanted mask (eg: 'Galene')
+    Args:
+        data_cube: Marcia DataCube Object.
+        mineral: Name of the wanted element (eg: 'Galene')
+
+    Raises:
+        FileNotFoundError: If raw data cube is not in folder.
 
     """
     if not os.path.isfile(f"{data_cube.prefix}.raw") & os.path.isfile(f"{data_cube.prefix}.rpl"):
@@ -238,21 +297,24 @@ def save_cube_inside_mask(data_cube, mineral: str):
     f = open(f"{data_cube.prefix}.rpl", "r")
     output = open(
         f"{data_cube.prefix}_mask_kept_{data_cube.elements[mineral_index]}.rpl",
-                  'w')
+        'w')
     output.write(f.read())
     f.close()
     output.close()
 
 
-def save_cube_outside_mask(data_cube, mineral: str):
+def save_cube_outside_mask(data_cube: DataCube,
+                           mineral: str):
     """
-    Recreates a raw datacube containing all the
-    data without the mask not wanted.
+    Recreates a raw datacube containing data that 
+    are not in the specified element.
 
-    Parameters
-    ----------
-    mineral : str
-        Name of the wanted mask (eg: 'Galene')
+    Args:
+        data_cube: Marcia DataCube Object.
+        mineral: Name of the wanted element (eg: 'Galene')
+
+    Raises:
+        FileNotFoundError: If raw data cube is not in folder.
 
     """
     if not os.path.isfile(f"{data_cube.prefix}.raw") & os.path.isfile(f"{data_cube.prefix}.rpl"):
@@ -271,8 +333,8 @@ def save_cube_outside_mask(data_cube, mineral: str):
         cube = hs.signals.Signal1D(array)
         cube.save(
             f"{data_cube.prefix}_mask_removed_mixed.rpl",
-                  encoding='utf8')
-                  
+            encoding='utf8')
+
         f = open(f"{data_cube.prefix}.rpl", "r")
         output = open(f"{data_cube.prefix}_mask_removed_mixed.rpl",
                       'w')
@@ -307,25 +369,29 @@ def save_cube_outside_mask(data_cube, mineral: str):
         cube = hs.signals.Signal1D(array)
         cube.save(
             f"{data_cube.prefix}_mask_removed_{data_cube.elements[mineral_index]}.rpl",
-                  encoding='utf8')
+            encoding='utf8')
         f = open(f"{data_cube.prefix}.rpl", "r")
         output = open(
             f"{data_cube.prefix}_mask_removed_'{data_cube.elements[mineral_index]}.rpl",
-                      'w')
+            'w')
         output.write(f.read())
         f.close()
         output.close()
 
 
-def save_mask_spectrum(data_cube, mask: str):
-    """Save the mean spectrum of a given mask as a txt file
-    First column is channel
-    Second column is counts
+def save_mask_spectrum(data_cube: DataCube,
+                       mask: str):
+    """Save mean spectrum of a given mask as a .txt file.
 
-    Parameters
-    ----------
-    mask : str
-        Name of the wanted mask (eg: 'Galene')
+    - First column is channel.
+    - Second column is counts.
+
+    Args:
+        data_cube: Marcia DataCube Object.
+        mask: Name of the wanted mask (eg: 'Galene').
+
+    Raises:
+        FileNotFoundError: If raw data cube is not in folder.
 
     """
     if not os.path.isfile(f"{data_cube.prefix}.raw") & os.path.isfile(f"{data_cube.prefix}.rpl"):
