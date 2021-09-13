@@ -24,7 +24,7 @@ def hist_in_mask(data_cube: DataCube,
         mineral_cube: MineralCube to check if element in mineral.
         element:  Name of the wanted element (eg: 'Fe').
         mineral:  Name of the wanted mask (eg: 'Galene').
-    
+
     Note:
         Does not work if datacube is HyperCube (yet).
 
@@ -42,14 +42,17 @@ def hist_in_mask(data_cube: DataCube,
     array[np.isnan(mineral_cube.datacube[:, :, mineral])] = 0
     im = ax[0].imshow(array)
     ax[0].grid()
-    ax[0].set_title("Carte élémentaire de {} masquéé par {}".format(
-        data_cube.elements[element], mineral_cube.elements[mineral]))
+    ax[0].set_title(
+        f"Carte élémentaire de {data_cube.elements[element]} masquéé par {mineral_cube.elements[mineral]}")
     fig.colorbar(im, ax=ax[0])
     plt.ylim(0, np.max(Anan))
-    sns.distplot(Anan, kde=False, ax=axes[1], hist_kws={
-        'range': (0.0, np.max(Anan))}, vertical=True)
+    sns.distplot(Anan,
+                 kde=False,
+                 ax=axes[1],
+                 hist_kws={'range': (0.0, np.max(Anan))},
+                 vertical=True)
     ax[1].set_xscale('log')
-    ax[1].set_title("Histograme d'intensité : " + data_cube.elements[element])
+    ax[1].set_title(f"Histograme d'intensité : {data_cube.elements[element]}")
     fig.tight_layout()
     plt.show()
 
@@ -97,7 +100,7 @@ def datacube_hist(datacube: DataCube,
         datacube.datacube[:, :, indice])]
     im = ax[0].imshow(datacube.datacube[:, :, indice])
     ax[0].grid()
-    ax[0].set_title("Carte élémentaire : " + datacube.elements[indice])
+    ax[0].set_title(f"Carte élémentaire : {datacube.elements[indice]}")
     fig.colorbar(im, ax=ax[0])
     plt.ylim(0, np.max(finite_data))
     sns.distplot(finite_data,
@@ -109,7 +112,7 @@ def datacube_hist(datacube: DataCube,
     # Logarithm scale because background has a lof ot points and flatten
     # interesting information if linear
     ax[1].set_xscale('log')
-    ax[1].set_title("Histograme d'intensité : " + datacube.elements[indice])
+    ax[1].set_title(f"Histograme d'intensité : {datacube.elements[indice]}")
     fig.tight_layout()
     plt.show()
 
@@ -144,7 +147,7 @@ def mineralcube_hist(mineral_cube: MineralCube,
     data[np.isnan(data)] = 0
     im = ax[0].imshow(data)
     ax[0].grid()
-    ax[0].set_title("Carte élémentaire : " + mineral_cube.elements[indice])
+    ax[0].set_title(f"Carte élémentaire : {mineral_cube.elements[indice]}")
     fig.colorbar(im, ax=ax[0])
     plt.ylim(0, np.max(finite_data))
     sns.distplot(finite_data,
@@ -156,8 +159,7 @@ def mineralcube_hist(mineral_cube: MineralCube,
     # Logarithm scale because background has a lof ot points and flatten
     # interesting information if linear
     ax[1].set_xscale('log')
-    ax[1].set_title("Histograme d'intensité : " +
-                    mineral_cube.elements[indice])
+    ax[1].set_title(f"Histograme d'intensité : {mineral_cube.elements[indice]}")
     fig.tight_layout()
     plt.show()
 
@@ -176,7 +178,7 @@ def hypercube_hist(datacube: MineralCube,
     finite_data = t[np.isfinite(t)]
     im = ax[0].imshow(t)
     ax[0].grid()
-    ax[0].set_title("Carte élémentaire : " + elements)
+    ax[0].set_title(f"Carte élémentaire : {elements}")
     fig.colorbar(im, ax=ax[0])
     plt.ylim(0, np.max(finite_data))
     sns.distplot(finite_data,
@@ -188,7 +190,7 @@ def hypercube_hist(datacube: MineralCube,
     # Logarithm scale because background has a lof ot points and flatten
     # interesting information if linear
     ax[1].set_xscale('log')
-    ax[1].set_title("Histograme d'intensité : " + elements)
+    ax[1].set_title(f"Histograme d'intensité : {elements}")
     fig.tight_layout()
     plt.show()
 

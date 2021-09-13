@@ -353,7 +353,7 @@ def save_cube_outside_mask(data_cube: DataCube,
         cube = hs.signals.Signal1D(array)
         cube.save(f"{data_cube.prefix}_mask_removed_nan.rpl",
                   encoding='utf8')
-        f = open(data_cube.prefix + ".rpl", "r")
+        f = open(f"{data_cube.prefix}.rpl", "r")
         output = open(f"{data_cube.prefix}_mask_removed_nan.rpl",
                       'w')
         output.write(f.read())
