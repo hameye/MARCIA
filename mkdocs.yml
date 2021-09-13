@@ -22,6 +22,9 @@ theme:
     - navigation.sections
     - navigation.expand
     - navigation.top
+  logo: assets/images/icon.png
+  favicon: assets/images/icon.png
+
 
 nav:
   - Home: index.md
@@ -29,7 +32,8 @@ nav:
     - Python Installation: python_install.md
     - MARCIa Installation: marcia_install.md
   - User Guides: 
-    - Complete Example: examples/Tutorial.ipynb
+    - Sample Classification: examples/Tutorial_fr.ipynb
+    - Features Extraction: examples/Features_extraction_fr.ipynb
   - Code Documentation:
     - Objects: 
       - Datacube: code_reference/datacube.md
