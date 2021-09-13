@@ -198,3 +198,37 @@ class HyperCube(DataCube):
             True if Normalized, False else.
         """
         return self._normalization
+
+    def mineral_cube_creation_from_hps(self,
+                                       elements_list: List):
+        new_cube = np.zeros((self.datacube.axes_manager.shape[1],
+                            self.datacube.axes_manager.shape[0],
+                            len(elements_list)))
+        for element in range(len(elements_list)):
+            if '/' not in elements_list[element]:
+                self.datacube.set_elements([elements_list[element]])
+                array = self.datacube.get_lines_intensity()
+                new_cube[:, :, element] = np.asarray(array[0])
+            else:
+                self.datacube.set_elements(
+                    [elements_list[element].split('/')[0]])
+                array = self.datacube.get_lines_intensity()
+                image_over = np.asarray(array[0])
+                self.datacube.set_elements(
+                    [elements_list[element].split('/')[1]])
+                array = self.datacube.get_lines_intensity()
+                image_under = np.asarray(array[0])
+
+                image_under[image_under == 0.] = 0.001
+                new_cube[
+                    :, :, element] = image_over / image_under
+
+            if self.normalization:
+                for i in range(len(elements_list)):
+                    new_cube[:, :, i] = new_cube[
+                        :, :, i] / np.nanmax(new_cube[:, :, i]) * 100
+        elements = elements_list
+        number = np.arange(len(elements_list))
+        dictionnary = dict(zip(number, elements))
+
+        return MultiCube(new_cube, dictionnary, None, None, False)
