@@ -1,7 +1,7 @@
 from typing import List
 
 import pandas as pd
-
+pd.options.mode.chained_assignment = None  # default='warn'
 
 class Mask:
     """Mask Fitter Class
@@ -65,12 +65,29 @@ class Mask:
         return self._colors
 
     def set_value(self,
-                  element: str,
                   mask: str,
-                  value):
+                  element: str,
+                  value: str):
+        """Change value of threshold for
+        a defined mask.
+
+        Args:
+            element (str): Element from Mask to be change updated.
+            mask (str): Mask to be updated.
+            value (str): Value to be set.
+        """
         self._table[mask][element] = value
 
     def get_value(self,
                   element: str,
                   mask: str):
+        """Get value of threshold for a defined mask.
+
+        Args:
+            element (str): Element from Mask to be change updated.
+            mask (str):  Mask to be updated.
+
+        Returns:
+            [type]: [description]
+        """
         return self._table[mask][element]
