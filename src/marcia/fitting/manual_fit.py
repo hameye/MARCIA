@@ -1,10 +1,10 @@
 import numpy as np
 
-from ..core.datacube import DataCube, MineralCube
+from ..core.datacube import MineralCube, MultiCube
 from ..core.mask import Mask
 
 
-def mineralcube_creation(cube: DataCube,
+def mineralcube_creation(cube: MultiCube,
                          mask: Mask) -> MineralCube:
     """
     Create a 3D numpy array (X and Y are the dimensions
@@ -29,7 +29,7 @@ def mineralcube_creation(cube: DataCube,
         cube: Marcia DataCube Object to be classify.
         mask: Marcia Mask Object containing thresholds
             for manual classification.
-    
+
     Returns:
         Marcia Mineralube Object containing binary values.
 
