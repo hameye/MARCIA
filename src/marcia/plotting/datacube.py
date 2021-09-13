@@ -6,7 +6,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.colors import ListedColormap
 
-from ..core.datacube import DataCube, MineralCube, MultiCube
+from ..core.datacube import DataCube, HyperCube, MineralCube, MultiCube
 
 mpl.rcParams['image.cmap'] = 'cividis'
 
@@ -24,6 +24,9 @@ def hist_in_mask(data_cube: DataCube,
         mineral_cube: MineralCube to check if element in mineral.
         element:  Name of the wanted element (eg: 'Fe').
         mineral:  Name of the wanted mask (eg: 'Galene').
+    
+    Note:
+        Does not work if datacube is HyperCube (yet).
 
     """
     # Conversion of given string indices to integer indices of the cubes
@@ -61,8 +64,14 @@ def hist(datacube: DataCube,
     """
     if type(datacube) == MultiCube:
         datacube_hist(datacube, indice)
-    if type(datacube) == MineralCube:
+    elif type(datacube) == MineralCube:
         mineralcube_hist(datacube, indice)
+    elif type(datacube == HyperCube):
+        hypercube_hist(datacube, indice)
+    else:
+        raise NotImplementedError(
+            'Method not implemented yet ... '
+        )
 
 
 def datacube_hist(datacube: DataCube,
@@ -153,6 +162,37 @@ def mineralcube_hist(mineral_cube: MineralCube,
     plt.show()
 
 
+def hypercube_hist(datacube: MineralCube,
+                   elements: str):
+    datacube.datacube.set_elements([elements])
+    t = np.asarray(datacube.datacube.get_lines_intensity()[0])
+    if datacube.normalization:
+        t = t / np.nanmax(t) * 100
+
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    ax = axes.ravel()
+
+    # Keep only finite values
+    finite_data = t[np.isfinite(t)]
+    im = ax[0].imshow(t)
+    ax[0].grid()
+    ax[0].set_title("Carte élémentaire : " + elements)
+    fig.colorbar(im, ax=ax[0])
+    plt.ylim(0, np.max(finite_data))
+    sns.distplot(finite_data,
+                 kde=False,
+                 ax=axes[1],
+                 hist_kws={'range': (0.0, np.max(finite_data))},
+                 vertical=True)
+
+    # Logarithm scale because background has a lof ot points and flatten
+    # interesting information if linear
+    ax[1].set_xscale('log')
+    ax[1].set_title("Histograme d'intensité : " + elements)
+    fig.tight_layout()
+    plt.show()
+
+
 def plot(datacube: DataCube,
          indice: str):
     """
@@ -160,7 +200,7 @@ def plot(datacube: DataCube,
     Input is the index of the mineral in the 3D array (cube).
 
     Args:
-        mineral_cube: Marcia DataCube Object.
+        datacube: Marcia DataCube Object.
         indice: Element to plot.
 
     """
