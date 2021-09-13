@@ -13,7 +13,7 @@ class DataCube(ABC):
         prefix (str): Common name between files.
         suffix (str): Extension name of the files.
     """
-
+    @abstractmethod
     def __init__(self,
                  datacube: np.ndarray,
                  prefix: str,
@@ -52,10 +52,6 @@ class DataCube(ABC):
         """
         return self._suffix
 
-    @abstractmethod
-    def plot(self, element: str):
-        pass
-
 
 class MultiCube(DataCube):
     """MultiCube Object.
@@ -74,8 +70,8 @@ class MultiCube(DataCube):
     def __init__(self,
                  data_cube: np.ndarray,
                  elements: Dict,
-                 prefix: str,
-                 suffix: str,
+                 prefix: str = None,
+                 suffix: str = None,
                  normalization: bool = True):
         """Init MultiCube object.
 
@@ -123,12 +119,21 @@ class MineralCube(MultiCube):
     def __init__(self,
                  data_cube: np.ndarray,
                  elements: Dict,
-                 prefix: str,
-                 suffix: str,
+                 prefix: str = None,
+                 suffix: str = None,
                  normalization: bool = True,
                  colors: List = None):
         self._colors = colors
         super().__init__(data_cube, elements, prefix, suffix, normalization)
+
+    @property
+    def colors(self) -> List:
+        """Returns colors lists.
+
+        Returns:
+            List of colors for plotting purposes.
+        """
+        return self._colors
 
     def map(self) -> Tuple[np.ndarray, Dict]:
         """
@@ -180,5 +185,16 @@ class HyperCube(DataCube):
     def __init__(self,
                  data_cube,
                  prefix,
-                 suffix):
+                 suffix,
+                 normalization: bool = True):
+        self._normalization = normalization
         super().__init__(data_cube, prefix, suffix)
+
+    @property
+    def normalization(self) -> bool:
+        """Returns Normalization parameters.
+
+        Returns:
+            True if Normalized, False else.
+        """
+        return self._normalization
