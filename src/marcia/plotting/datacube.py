@@ -41,7 +41,7 @@ def hist_in_mask(data_cube: DataCube,
     array = data_cube.datacube[:, :, element]
     array[np.isnan(mineral_cube.datacube[:, :, mineral])] = 0
     im = ax[0].imshow(array)
-    ax[0].grid()
+    ax[0].set_axis_off()
     ax[0].set_title(
         f"Carte élémentaire de {data_cube.elements[element]} masquéé par {mineral_cube.elements[mineral]}")
     fig.colorbar(im, ax=ax[0])
@@ -69,7 +69,7 @@ def hist(datacube: DataCube,
         datacube_hist(datacube, indice)
     elif type(datacube) == MineralCube:
         mineralcube_hist(datacube, indice)
-    elif type(datacube == HyperCube):
+    elif type(datacube) == HyperCube:
         hypercube_hist(datacube, indice)
     else:
         raise NotImplementedError(
@@ -99,7 +99,7 @@ def datacube_hist(datacube: DataCube,
     finite_data = datacube.datacube[:, :, indice][np.isfinite(
         datacube.datacube[:, :, indice])]
     im = ax[0].imshow(datacube.datacube[:, :, indice])
-    ax[0].grid()
+    ax[0].set_axis_off()
     ax[0].set_title(f"Carte élémentaire : {datacube.elements[indice]}")
     fig.colorbar(im, ax=ax[0])
     plt.ylim(0, np.max(finite_data))
@@ -146,8 +146,8 @@ def mineralcube_hist(mineral_cube: MineralCube,
     data = mineral_cube.datacube[:, :, indice].copy()
     data[np.isnan(data)] = 0
     im = ax[0].imshow(data)
-    ax[0].grid()
-    ax[0].set_title(f"Carte élémentaire : {mineral_cube.elements[indice]}")
+    ax[0].set_axis_off()
+    ax[0].set_title(f"Carte minérale : {mineral_cube.elements[indice]}")
     fig.colorbar(im, ax=ax[0])
     plt.ylim(0, np.max(finite_data))
     sns.distplot(finite_data,
@@ -159,12 +159,12 @@ def mineralcube_hist(mineral_cube: MineralCube,
     # Logarithm scale because background has a lof ot points and flatten
     # interesting information if linear
     ax[1].set_xscale('log')
-    ax[1].set_title(f"Histograme d'intensité : {mineral_cube.elements[indice]}")
+    ax[1].set_title(f"Histograme de probabilité : {mineral_cube.elements[indice]}")
     fig.tight_layout()
     plt.show()
 
 
-def hypercube_hist(datacube: MineralCube,
+def hypercube_hist(datacube: HyperCube,
                    elements: str):
     datacube.datacube.set_elements([elements])
     t = np.asarray(datacube.datacube.get_lines_intensity()[0])
@@ -177,7 +177,7 @@ def hypercube_hist(datacube: MineralCube,
     # Keep only finite values
     finite_data = t[np.isfinite(t)]
     im = ax[0].imshow(t)
-    ax[0].grid()
+    ax[0].set_axis_off()
     ax[0].set_title(f"Carte élémentaire : {elements}")
     fig.colorbar(im, ax=ax[0])
     plt.ylim(0, np.max(finite_data))
@@ -355,7 +355,7 @@ def plot_minerals(datacube: MineralCube):
     new_colormap = ListedColormap(colors)
 
     # Open new figure
-    fig = plt.figure()
+    fig = plt.figure(figsize=(10, 5))
     im = plt.imshow(array,
                     cmap=new_colormap,
                     vmin=values.min(),
@@ -395,7 +395,7 @@ def plot_minerals(datacube: MineralCube):
                bbox_to_anchor=(1.05, 1),
                loc=2,
                borderaxespad=0.)
-    plt.grid(True)
     plt.title(f"Mineralogical classification - {datacube.prefix}")
-    plt.tight_layout()
+    #plt.tight_layout()
+    #plt.axis('off')
     plt.show()

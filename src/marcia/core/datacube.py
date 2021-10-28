@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, List, Tuple
 
 import numpy as np
-
+import pandas as pd
 
 class DataCube(ABC):
     """Base Class Object for datacube.
@@ -168,6 +168,45 @@ class MineralCube(MultiCube):
                 0].shape[0] / np.sum(np.isfinite(array)) * 100
 
         return array, proportion
+    
+    def compute_duplicate_stats(self):
+        shape_0 = self.datacube.shape[0]
+        shape_1 = self.datacube.shape[1]
+        shape_2 = self.datacube.shape[2]
+
+        mineral_df = pd.DataFrame(
+            self.datacube.reshape(shape_0 * shape_1, shape_2))
+
+        mixed_df = mineral_df[mineral_df.sum(axis=1) > 1]
+
+        range_mineral_df = self.datacube * \
+            np.arange(shape_2)[np.newaxis, np.newaxis, :]
+
+        range_mineral_df = pd.DataFrame(
+            range_mineral_df.reshape(shape_0 * shape_1, shape_2))
+
+        range_mineral_df = range_mineral_df.iloc[mixed_df.index]
+
+        for key, values in self.elements.items():
+            range_mineral_df = range_mineral_df.replace(key, values)
+
+        null_test = range_mineral_df.replace(np.nan, 0)
+        summary_def = null_test.groupby(
+            null_test.columns.to_list()).size().reset_index(name='count')
+
+        summary_def['count'] = summary_def['count'] / len(null_test) * 100
+
+        sorted_df = summary_def.sort_values(by='count', ascending=False)
+        sorted_df.rename(columns={'count': 'Percentage of Mixed'}, inplace=True)
+
+        return sorted_df.reset_index(drop=True)
+
+    def get_proportion(self):
+        _, proportion = self.map()
+        dico = {}
+        for i in range(len(self.elements)):
+            dico[self.elements[i]] = round(proportion[i], 4)
+        return dico
 
 
 class HyperCube(DataCube):
@@ -199,8 +238,8 @@ class HyperCube(DataCube):
         """
         return self._normalization
 
-    def mineral_cube_creation_from_hps(self,
-                                       elements_list: List):
+    def to_multi_cube(self,
+                      elements_list: List):
         new_cube = np.zeros((self.datacube.axes_manager.shape[1],
                             self.datacube.axes_manager.shape[0],
                             len(elements_list)))
@@ -231,4 +270,4 @@ class HyperCube(DataCube):
         number = np.arange(len(elements_list))
         dictionnary = dict(zip(number, elements))
 
-        return MultiCube(new_cube, dictionnary, None, None, False)
+        return MultiCube(new_cube, dictionnary, self.prefix, self.suffix, False)
