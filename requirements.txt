@@ -1,8 +1,9 @@
-hyperspy==1.5.2
-matplotlib==3.2.2
-numpy==1.18.5
-pandas==1.0.5
-Pillow==8.1.1
-scikit-image==0.16.2
-seaborn==0.10.1
-xlrd==1.2.0
+hyperspy
+matplotlib
+numpy
+openpyxl
+pandas<2
+Pillow
+scikit-image
+seaborn
+xlrd
