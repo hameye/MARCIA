@@ -4,8 +4,10 @@ from ..core.datacube import MineralCube, MultiCube
 from ..core.mask import Mask
 
 
-def mineralcube_creation(cube: MultiCube,
-                         mask: Mask) -> MineralCube:
+def mineralcube_creation(
+    cube: MultiCube,    
+    mask: Mask
+) -> MineralCube: 
     """
     Create a 3D numpy array (X and Y are the dimensions
     of the sample and Z dimension is the number of minerals wanted for
@@ -68,15 +70,15 @@ def mineralcube_creation(cube: MultiCube,
 
             # If only one value in the table: it corresponds to minimum
             # threshold
-            if len(str_table[index_str[k]].split('-')) == 1:
-                threshold_min = float(str_table[index_str[k]].split('-')[0])
+            if len(str_table.str.split('-').iloc[index_str[k]]) == 1:
+                threshold_min = float(str_table.str.split('-').iloc[index_str[k]][0])
                 threshold_max = None
 
             # If more thant one value (should be 2): it corresponds to the
             # range of accepted values
             else:
-                threshold_min = float(str_table[index_str[k]].split('-')[0])
-                threshold_max = float(str_table[index_str[k]].split('-')[1])
+                threshold_min = float(str_table.str.split('-').iloc[index_str[k]][0])
+                threshold_max = float(str_table.str.split('-').iloc[index_str[k]][1])
 
             # If the value are normalized, the threshold is between 0 and
             # 1: need to compare to maximum value

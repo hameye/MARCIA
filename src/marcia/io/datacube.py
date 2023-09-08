@@ -11,10 +11,12 @@ from PIL import Image
 from ..core.datacube import DataCube, HyperCube, MultiCube
 
 
-def load(prefix: str,
-         suffix: str,
-         normalization: bool = True,
-         element_list: List[str] = None):
+def load(
+    prefix: str,
+    suffix: str,
+    normalization: bool = True,
+    element_list: List[str] = None
+):
     """
     Create a 3D array (X and Y are the dimensions of the
     sample and Z dimension is the number of elements/emission lines taken
@@ -56,7 +58,7 @@ def load(prefix: str,
             elements to be taken, or let the program
             finds all data in corresponding to given
             prefix name.
-    
+
     Raises:
         TypeError: If given extension is not accepted by the program.
     """
@@ -80,27 +82,29 @@ def load(prefix: str,
     # Check if data are .rpl file, that is complete datacube
     # Load of the file using HyperSpy library
     elif suffix == '.rpl':
-        print(
-            f"Measuring tools defaut parameters are scale = {0.01}, offset={0.97}"
+        print(f"Measuring tools defaut parameters are scale = {0.01}, offset={0.97}")
+        return load_hypermap(
+            prefix,
+            suffix,
+            name='E',
+            units='keV',
+            scale=0.01, offset=-0.97
         )
-        return load_hypermap(prefix,
-                             suffix,
-                             name='E',
-                             units='keV',
-                             scale=0.01, offset=-0.97)
 
     # Raise Exception to provide valide data type
     else:
-        raise TypeError(f"{prefix} invalid data type. "
-                        f"Valid data types are: "
-                        f".png, .jpg, .bmp, .tif, .txt or .rpl ")
+        raise TypeError(
+            f"{prefix} invalid data type. Valid data types are: .png, .jpg, .bmp, .tif, .txt or .rpl "
+        )
 
 
-def load_images(file_list: List[str],
-                prefix: str,
-                suffix: str) -> MultiCube:
+def load_images(
+    file_list: List[str],
+    prefix: str,
+    suffix: str
+) -> MultiCube:
     """Images Data loader. 
-    
+
     Low-level function for data loading.
 
     Args:
@@ -118,38 +122,36 @@ def load_images(file_list: List[str],
 
     # Creation of element names dictionnary
     elements = {}
-    element_list = [elt.replace(f'{prefix}_', '').replace(
-        f'{suffix}', '') for elt in file_list]
+    element_list = [elt.replace(f'{prefix}_', '').replace(f'{suffix}', '') for elt in file_list]
 
     # Read the first image to know the dimensions
-    test_image = np.linalg.norm(np.array(Image.open(file_list[0])),
-                                axis=2)
+    test_image = np.linalg.norm(np.array(Image.open(file_list[0])), axis=2)
 
     # Initialize multi-dimensionnal array
-    data_cube = np.zeros((test_image.shape[0],
-                          test_image.shape[1],
-                          len(file_list)))
+    data_cube = np.zeros((test_image.shape[0], test_image.shape[1], len(file_list)))
 
     # Loop over elements in the table
     for element in range(len(file_list)):
         elements[element] = element_list[element]
 
         # Load of the  RGB image and normalization to one component
-        data_cube[:, :, element] = np.linalg.norm(
-            np.array(Image.open(file_list[element])),
-            axis=2)
+        data_cube[:, :, element] = np.linalg.norm(np.array(Image.open(file_list[element])), axis=2)
 
-        data_cube[:, :, element] = (data_cube[:, :, element]
-                                    / np.nanmax(data_cube[:, :, element])
-                                    * 100)
+        data_cube[:, :, element] = (
+            data_cube[:, :, element]
+            / np.nanmax(data_cube[:, :, element])
+            * 100
+        )
 
     return MultiCube(data_cube, elements, prefix, suffix, normalization=normalization)
 
 
-def load_textfile(file_list: List[str],
-                  prefix: str,
-                  suffix: str,
-                  normalization: bool = True) -> MultiCube:
+def load_textfile(
+    file_list: List[str],
+    prefix: str,
+    suffix: str,
+    normalization: bool = True
+) -> MultiCube:
     """Text Data Loader.
 
     Low-level function for data loading.
@@ -168,42 +170,41 @@ def load_textfile(file_list: List[str],
     """
     # Creation of element names dictionnary
     elements = {}
-    element_list = [elt.replace(f'{prefix}_', '').replace(
-        f'{suffix}', '') for elt in file_list]
+    element_list = [elt.replace(f'{prefix}_', '').replace(f'{suffix}', '') for elt in file_list]
 
     # Read the first image to know the dimensions
-    test_image = np.loadtxt(file_list[0],
-                            delimiter=';')
+    test_image = np.loadtxt(file_list[0], delimiter=';')
 
     # Initialize multi-dimensionnal array
-    data_cube = np.zeros((test_image.shape[0],
-                          test_image.shape[1],
-                          len(file_list)))
+    data_cube = np.zeros((test_image.shape[0], test_image.shape[1], len(file_list)))
 
     # Loop over elements in the table
     for element in range(len(file_list)):
         elements[element] = element_list[element]
 
         # Load of the data count per element
-        data_cube[:, :, element] = np.loadtxt(file_list[element],
-                                              delimiter=';')
+        data_cube[:, :, element] = np.loadtxt(file_list[element], delimiter=';')
 
         # If user wants to see normalized over 100 data
         # This option makes impossible intensity comparison over element
         if normalization:
-            data_cube[:, :, element] = (data_cube[:, :, element]
-                                        / np.nanmax(data_cube[:, :, element])
-                                        * 100)
+            data_cube[:, :, element] = (
+                data_cube[:, :, element]
+                / np.nanmax(data_cube[:, :, element])
+                * 100
+            )
 
     return MultiCube(data_cube, elements, prefix, suffix, normalization)
 
 
-def load_hypermap(prefix: str,
-                  suffix: str,
-                  name: str = 'E',
-                  units: str = 'keV',
-                  scale: float = 0.01,
-                  offset: float = - 0.97) -> HyperCube:
+def load_hypermap(
+    prefix: str,
+    suffix: str,
+    name: str = 'E',
+    units: str = 'keV',
+    scale: float = 0.01,
+    offset: float = - 0.97
+) -> HyperCube:
     """Raw HyperCube Data Loader.
 
     Args:
@@ -219,9 +220,7 @@ def load_hypermap(prefix: str,
 
         HyperCube means data channels are continuous.
     """
-    cube = hs.load(f'{prefix}{suffix}',
-                   signal_type="EDS_SEM",
-                   lazy=True)
+    cube = hs.load(f'{prefix}{suffix}', signal_type="EDS_SEM", lazy=True)
     cube.axes_manager[-1].name = name
     cube.axes_manager[name].units = units
     cube.axes_manager[name].scale = scale
@@ -230,9 +229,11 @@ def load_hypermap(prefix: str,
     return HyperCube(cube, prefix, suffix)
 
 
-def save(datacube: DataCube,
-         element: str,
-         raw: bool = False):
+def save(
+    datacube: DataCube,
+    element: str,
+    raw: bool = False
+):
     """
     Save specified element as a .tif image file.
 
@@ -256,8 +257,7 @@ def save(datacube: DataCube,
 
     # Else, return only image withou background
     else:
-        test_array = (datacube.datacube[:, :, index] * 255).astype(
-            np.uint8)
+        test_array = (datacube.datacube[:, :, index] * 255).astype(np.uint8)
         image = Image.fromarray(test_array)
         image.save(f"mask_{datacube.elements[index]}.tif")
 
@@ -282,9 +282,7 @@ def save_cube_inside_mask(data_cube: DataCube,
     # Conversion of given string indices to integer indice of the cube
     mineral_index = list(data_cube.elements.values()).index(str(mineral))
 
-    cube = hs.load(f"{data_cube.prefix}.rpl",
-                   signal_type="EDS_SEM",
-                   lazy=True)
+    cube = hs.load(f"{data_cube.prefix}.rpl", signal_type="EDS_SEM", lazy=True)
 
     array = np.asarray(cube)
     array[np.isnan(data_cube.datacube[:, :, mineral_index])] = 0
@@ -292,19 +290,20 @@ def save_cube_inside_mask(data_cube: DataCube,
 
     cube.save(
         f"{data_cube.prefix}_mask_kept_'{data_cube.elements[mineral_index]}.rpl",
-        encoding='utf8')
+        encoding='utf8'
+    )
 
     f = open(f"{data_cube.prefix}.rpl", "r")
-    output = open(
-        f"{data_cube.prefix}_mask_kept_{data_cube.elements[mineral_index]}.rpl",
-        'w')
+    output = open(f"{data_cube.prefix}_mask_kept_{data_cube.elements[mineral_index]}.rpl", 'w')
     output.write(f.read())
     f.close()
     output.close()
 
 
-def save_cube_outside_mask(data_cube: DataCube,
-                           mineral: str):
+def save_cube_outside_mask(
+    data_cube: DataCube,
+    mineral: str
+):
     """
     Recreates a raw datacube containing data that 
     are not in the specified element.
@@ -324,20 +323,15 @@ def save_cube_outside_mask(data_cube: DataCube,
     if mineral == 'mixed':
         a = data_cube.map()[0]
         mixed = np.where(a < np.nanmax(a), np.nan, a)
-        cube = hs.load(f"{data_cube.prefix}.rpl",
-                       signal_type="EDS_SEM",
-                       lazy=True)
+        cube = hs.load(f"{data_cube.prefix}.rpl", signal_type="EDS_SEM", lazy=True)
 
         array = np.asarray(cube)
         array[np.isfinite(mixed)] = 0
         cube = hs.signals.Signal1D(array)
-        cube.save(
-            f"{data_cube.prefix}_mask_removed_mixed.rpl",
-            encoding='utf8')
+        cube.save(f"{data_cube.prefix}_mask_removed_mixed.rpl", encoding='utf8')
 
         f = open(f"{data_cube.prefix}.rpl", "r")
-        output = open(f"{data_cube.prefix}_mask_removed_mixed.rpl",
-                      'w')
+        output = open(f"{data_cube.prefix}_mask_removed_mixed.rpl", 'w')
         output.write(f.read())
         f.close()
         output.close()
@@ -345,42 +339,40 @@ def save_cube_outside_mask(data_cube: DataCube,
     elif mineral == 'not indexed':
         a = data_cube.map()[0]
         nan = np.where(np.isnan(a), 0, a)
-        cube = hs.load(f"{data_cube.prefix}.rpl",
-                       signal_type="EDS_SEM",
-                       lazy=True)
+        cube = hs.load(f"{data_cube.prefix}.rpl", signal_type="EDS_SEM", lazy=True)
         array = np.asarray(cube)
         array[np.isfinite(nan)] = 0
         cube = hs.signals.Signal1D(array)
-        cube.save(f"{data_cube.prefix}_mask_removed_nan.rpl",
-                  encoding='utf8')
+        cube.save(f"{data_cube.prefix}_mask_removed_nan.rpl", encoding='utf8')
         f = open(f"{data_cube.prefix}.rpl", "r")
-        output = open(f"{data_cube.prefix}_mask_removed_nan.rpl",
-                      'w')
+        output = open(f"{data_cube.prefix}_mask_removed_nan.rpl", 'w')
         output.write(f.read())
         f.close()
         output.close()
     else:
         mineral_index = list(data_cube.elements.values()).index(str(mineral))
-        cube = hs.load(f"{data_cube.prefix}.rpl",
-                       signal_type="EDS_SEM",
-                       lazy=True)
+        cube = hs.load(f"{data_cube.prefix}.rpl", signal_type="EDS_SEM", lazy=True)
         array = np.asarray(cube)
         array[np.isfinite(data_cube.datacube[:, :, mineral_index])] = 0
         cube = hs.signals.Signal1D(array)
         cube.save(
             f"{data_cube.prefix}_mask_removed_{data_cube.elements[mineral_index]}.rpl",
-            encoding='utf8')
+            encoding='utf8'
+        )
         f = open(f"{data_cube.prefix}.rpl", "r")
         output = open(
             f"{data_cube.prefix}_mask_removed_'{data_cube.elements[mineral_index]}.rpl",
-            'w')
+            'w'
+        )
         output.write(f.read())
         f.close()
         output.close()
 
 
-def save_mask_spectrum(data_cube: DataCube,
-                       mask: str):
+def save_mask_spectrum(
+    data_cube: DataCube,
+    mask: str
+):
     """Save mean spectrum of a given mask as a .txt file.
 
     - First column is channel.
@@ -398,9 +390,7 @@ def save_mask_spectrum(data_cube: DataCube,
         raise FileNotFoundError("Raw Cube not found in files")
 
     mineral_index = list(data_cube.elements.values()).index(str(mask))
-    cube = hs.load(f"{data_cube.prefix}.rpl",
-                   signal_type="EDS_SEM",
-                   lazy=True)
+    cube = hs.load(f"{data_cube.prefix}.rpl", signal_type="EDS_SEM", lazy=True)
 
     array = np.asarray(cube)
     array[np.isnan(data_cube.datacube[:, :, mineral_index])] = 0

@@ -11,11 +11,11 @@ def load_mask(filename: str) -> Mask:
 
     Args:
         filename: Name of the table file.
-    
+
     Raises:
         TypeError: If table file format is not 
             supported by the program.
-    
+
     Returns:
         Marcia Mask Object.
     """
@@ -28,14 +28,12 @@ def load_mask(filename: str) -> Mask:
 
     else:
         raise TypeError(
-            f"{filename.split('.')[-1]} "
-            f"invalid Table format."
-            f"Valid data types are: .csv, .txt, or .xls ")
+            f"{filename.split('.')[-1]} invalid Table format. Valid data types are: .csv, .txt, or .xls "
+        )
 
     colors = []
     if table.index.str.contains('ouleur|olor').any():
-        indice = np.where(
-            table.index.str.contains('ouleur|olor'))[0][0]
+        indice = np.where(table.index.str.contains('ouleur|olor'))[0][0]
         color_name = table.index[indice]
 
         # Creation of dictionnary containing the colors

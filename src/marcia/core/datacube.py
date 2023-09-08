@@ -4,6 +4,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 
+
 class DataCube(ABC):
     """Base Class Object for datacube.
     Considered as abstract parent class.
@@ -14,11 +15,14 @@ class DataCube(ABC):
         suffix (str): Extension name of the files.
     """
     @abstractmethod
-    def __init__(self,
-                 datacube: np.ndarray,
-                 prefix: str,
-                 suffix: str):
-        """Init DataCube abstract class.
+    def __init__(
+        self,
+        datacube: np.ndarray,
+        prefix: str,
+        suffix: str
+    ):
+        """
+        Init DataCube abstract class.
 
         """
         self._datacube = datacube
@@ -67,12 +71,14 @@ class MultiCube(DataCube):
         normalization (bool): Indication of normalized data (0 to 100).
     """
 
-    def __init__(self,
-                 data_cube: np.ndarray,
-                 elements: Dict,
-                 prefix: str = None,
-                 suffix: str = None,
-                 normalization: bool = True):
+    def __init__(
+        self,
+        data_cube: np.ndarray,
+        elements: Dict,
+        prefix: str = None,
+        suffix: str = None,
+        normalization: bool = True
+    ):
         """Init MultiCube object.
 
         """
@@ -112,17 +118,19 @@ class MineralCube(MultiCube):
         elements (Dict): Dictionnary of channel names with associated index.
         prefix (str): Common name between files.
         suffix (str): Extension name of the files.
-        normalization (bool, optionnal): Indication of normalized data (0 to 100).
-        colors (List, optionnal): Color list provided for plotting consistency.
+        normalization (bool, Optional): Indication of normalized data (0 to 100).
+        colors (List, optional): Color list provided for plotting consistency.
     """
 
-    def __init__(self,
-                 data_cube: np.ndarray,
-                 elements: Dict,
-                 prefix: str = None,
-                 suffix: str = None,
-                 normalization: bool = True,
-                 colors: List = None):
+    def __init__(
+        self,
+        data_cube: np.ndarray,
+        elements: Dict,
+        prefix: str = None,
+        suffix: str = None,
+        normalization: bool = True,
+        colors: List = None
+    ):
         self._colors = colors
         super().__init__(data_cube, elements, prefix, suffix, normalization)
 
@@ -157,33 +165,34 @@ class MineralCube(MultiCube):
 
         # Loop over the mask to check pixels that are assigned more than once
         for indice in range(len(self.elements)):
-            array[(np.isfinite(self.datacube[:, :, indice])) & (
-                np.nansum(self.datacube, axis=2) == 1)] = indice
+            array[
+                (np.isfinite(self.datacube[:, :, indice]))
+                & (np.nansum(self.datacube, axis=2) == 1)
+            ] = indice
 
-        array[np.where(np.nansum(self.datacube, axis=2) > 1)
-              ] = len(self.elements) + 1
+        array[np.where(np.nansum(self.datacube, axis=2) > 1)] = len(self.elements) + 1
 
         for indice in range(len(self.elements)):
-            proportion[indice] = np.where(array == indice)[
-                0].shape[0] / np.sum(np.isfinite(array)) * 100
+            proportion[indice] = (
+                np.where(array == indice)[0].shape[0]
+                / np.sum(np.isfinite(array))
+                * 100
+            )
 
         return array, proportion
-    
+
     def compute_duplicate_stats(self):
         shape_0 = self.datacube.shape[0]
         shape_1 = self.datacube.shape[1]
         shape_2 = self.datacube.shape[2]
 
-        mineral_df = pd.DataFrame(
-            self.datacube.reshape(shape_0 * shape_1, shape_2))
+        mineral_df = pd.DataFrame(self.datacube.reshape(shape_0 * shape_1, shape_2))
 
         mixed_df = mineral_df[mineral_df.sum(axis=1) > 1]
 
-        range_mineral_df = self.datacube * \
-            np.arange(shape_2)[np.newaxis, np.newaxis, :]
+        range_mineral_df = self.datacube * np.arange(shape_2)[np.newaxis, np.newaxis, :]
 
-        range_mineral_df = pd.DataFrame(
-            range_mineral_df.reshape(shape_0 * shape_1, shape_2))
+        range_mineral_df = pd.DataFrame(range_mineral_df.reshape(shape_0 * shape_1, shape_2))
 
         range_mineral_df = range_mineral_df.iloc[mixed_df.index]
 
@@ -192,7 +201,8 @@ class MineralCube(MultiCube):
 
         null_test = range_mineral_df.replace(np.nan, 0)
         summary_def = null_test.groupby(
-            null_test.columns.to_list()).size().reset_index(name='count')
+            null_test.columns.to_list()
+        ).size().reset_index(name='count')
 
         summary_def['count'] = summary_def['count'] / len(null_test) * 100
 
@@ -221,11 +231,13 @@ class HyperCube(DataCube):
         suffix (str): File extension.
     """
 
-    def __init__(self,
-                 data_cube,
-                 prefix,
-                 suffix,
-                 normalization: bool = True):
+    def __init__(
+        self,
+        data_cube,
+        prefix,
+        suffix,
+        normalization: bool = True
+    ):
         self._normalization = normalization
         super().__init__(data_cube, prefix, suffix)
 
@@ -238,34 +250,36 @@ class HyperCube(DataCube):
         """
         return self._normalization
 
-    def to_multi_cube(self,
-                      elements_list: List):
-        new_cube = np.zeros((self.datacube.axes_manager.shape[1],
-                            self.datacube.axes_manager.shape[0],
-                            len(elements_list)))
+    def to_multi_cube(
+        self,
+        elements_list: List
+    ):
+        new_cube = np.zeros(
+            (
+                self.datacube.axes_manager.shape[1],
+                self.datacube.axes_manager.shape[0],
+                len(elements_list)
+            )
+        )
         for element in range(len(elements_list)):
             if '/' not in elements_list[element]:
                 self.datacube.set_elements([elements_list[element]])
                 array = self.datacube.get_lines_intensity()
                 new_cube[:, :, element] = np.asarray(array[0])
             else:
-                self.datacube.set_elements(
-                    [elements_list[element].split('/')[0]])
+                self.datacube.set_elements([elements_list[element].split('/')[0]])
                 array = self.datacube.get_lines_intensity()
                 image_over = np.asarray(array[0])
-                self.datacube.set_elements(
-                    [elements_list[element].split('/')[1]])
+                self.datacube.set_elements([elements_list[element].split('/')[1]])
                 array = self.datacube.get_lines_intensity()
                 image_under = np.asarray(array[0])
 
                 image_under[image_under == 0.] = 0.001
-                new_cube[
-                    :, :, element] = image_over / image_under
+                new_cube[:, :, element] = image_over / image_under
 
             if self.normalization:
                 for i in range(len(elements_list)):
-                    new_cube[:, :, i] = new_cube[
-                        :, :, i] / np.nanmax(new_cube[:, :, i]) * 100
+                    new_cube[:, :, i] = new_cube[:, :, i] / np.nanmax(new_cube[:, :, i]) * 100
         elements = elements_list
         number = np.arange(len(elements_list))
         dictionnary = dict(zip(number, elements))

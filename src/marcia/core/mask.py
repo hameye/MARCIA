@@ -1,7 +1,9 @@
 from typing import List
 
 import pandas as pd
+
 pd.options.mode.chained_assignment = None  # default='warn'
+
 
 class Mask:
     """Mask Fitter Class
@@ -14,10 +16,12 @@ class Mask:
         filename (str): Filename of table.
     """
 
-    def __init__(self,
-                 table: pd.DataFrame,
-                 colors: List,
-                 filename: str):
+    def __init__(
+        self,
+        table: pd.DataFrame,
+        colors: List,
+        filename: str
+    ):
         self._table = table
         self._colors = colors
         self._filename = filename
@@ -32,8 +36,10 @@ class Mask:
         return self._table
 
     @table.setter
-    def table(self,
-              new_table: pd.DataFrame):
+    def table(
+        self,
+        new_table: pd.DataFrame
+    ):
         self._table = new_table
 
     @property
@@ -64,10 +70,12 @@ class Mask:
         # Check if table has specific colors for the masks
         return self._colors
 
-    def set_value(self,
-                  mask: str,
-                  element: str,
-                  value: str):
+    def set_value(
+        self,
+        mask: str,
+        element: str,
+        value: str
+    ):
         """Change value of threshold for
         a defined mask.
 
@@ -78,9 +86,11 @@ class Mask:
         """
         self._table[mask][element] = value
 
-    def get_value(self,
-                  element: str,
-                  mask: str):
+    def get_value(
+        self,
+        element: str,
+        mask: str
+    ) -> float:
         """Get value of threshold for a defined mask.
 
         Args:
@@ -88,6 +98,6 @@ class Mask:
             mask (str):  Mask to be updated.
 
         Returns:
-            [type]: [description]
+            float: Threshold value.
         """
         return self._table[mask][element]
